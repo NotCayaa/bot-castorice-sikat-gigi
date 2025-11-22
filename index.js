@@ -1,3 +1,11 @@
+require('dotenv').config();           
+
+const Groq = require('groq-sdk');     
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
 const { Client, Intents } = require('discord.js');
 const token = 'MTE1OTExOTg3OTA3MzQ0Nzk0Nw.GWbAkG.OALGPRNoZJsBf-Cs3_FkM_p5VSke_XdV5_Trjk';
 
@@ -31,6 +39,45 @@ async function handleMessage(message) {
 
     if (message.author.bot) return;
 
+        // === LLM: !ditos <pesan> ===
+    if (message.content.startsWith('!ditos ')) {
+    const prompt = message.content.slice('!ditos '.length).trim();
+    if (!prompt) {
+        return message.reply('tulis pesannya juga dong, contoh: `!ditos jelasin apa itu GPU`');
+    }
+
+    try {
+        const completion = await groq.chat.completions.create({
+            model: 'llama-3.3-70b-versatile', // model default Groq yang kenceng :contentReference[oaicite:0]{index=0}
+            messages: [
+                {
+                    role: 'system',
+                    content:
+                        'Kamu adalah bot Discord bernama Ditos. Gaya bicara santai, campur Indonesia dan sedikit English. Suka ngejokes, konyol, kadang nyolot dikit tapi tetap bantu jelasin dengan jelas dan ringkas. Jangan terlalu panjang, jangan formal.'
+                },
+                {
+                    role: 'user',
+                    content: prompt,
+                },
+            ],
+            temperature: 0.8,
+            max_completion_tokens: 300,
+        });
+
+        const replyText = completion.choices?.[0]?.message?.content?.trim();
+
+        if (!replyText) {
+            return message.reply('Ditos lagi ngeblank, coba tanya sekali lagi dong 😵‍💫');
+        }
+
+        return message.reply(replyText);
+
+    } catch (error) {
+        console.error('Groq error:', error);
+        return message.reply('otak Groq-nya lagi error nih, coba sebentar lagi ya 😭');
+    }
+}
+
     if (message.content === '!ping') {
         return message.reply('!pong');
     }
@@ -40,6 +87,10 @@ async function handleMessage(message) {
     }
 
     if (message.content.toLowerCase() === 'woi <@1159119879073447947>') {
+        return message.channel.send('apcb');
+    }
+
+    if (message.content.toLowerCase() === '<@1159119879073447947>') {
         return message.channel.send('apcb');
     }
 
