@@ -3,6 +3,8 @@ require('dotenv').config();
 const Groq = require('groq-sdk');
 const ytSearch = require('yt-search');
 const ytpl = require('ytpl');
+const axios = require('axios');
+const sharp = require('sharp');
 
 const OWNER_ID = '756989869108101243';
 const ERROR_CHANNEL_ID = '1442006544030896138';
@@ -41,6 +43,10 @@ const {
   StreamType,
 } = require('@discordjs/voice');
 
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
@@ -52,7 +58,8 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.MessageContent, 
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildPresences, 
   ],
   partials: [Partials.Channel],
 });
@@ -123,9 +130,14 @@ const commands = {
   'ditos skip': 'Melewati lagu yang sedang diputar',
   'ditos stop': 'Menghentikan pemutaran musik dan keluar dari voice channel',
   'ditos sb <nama>': 'Memutar soundboard lokal (list soundboard: acumalaka, ahlele, tengkorak)',
+  'ditos joke': 'Random dad jokes',
+  'ditos userinfo @user': 'Info lengkap tentang user',
+  'ditos serverinfo': 'Info tentang server',
+  '!ditosclear': 'Clear conversation history dengan bot',
 };
 
-const musicQueues = new Map(); 
+const musicQueues = new Map();
+const conversationHistory = new Map();
 
 const ytdlExec = require('yt-dlp-exec');
 
@@ -173,7 +185,7 @@ async function playLocalSound(voiceChannel, key, textChannel) {
   const clip = SOUNDBOARD_CLIPS[key];
   if (!clip) {
     if (textChannel) {
-      await textChannel.send(`❌ Soundboard \`${key}\` belum ada.`);
+      await textChannel.send(`Soundboard \`${key}\` belum ada.`);
     }
     return;
   }
@@ -181,7 +193,7 @@ async function playLocalSound(voiceChannel, key, textChannel) {
   if (!fs.existsSync(clip.file)) {
     if (textChannel) {
       await textChannel.send(
-        `❌ File soundboard untuk \`${key}\` nggak ketemu di ${clip.file}`
+        `File soundboard untuk \`${key}\` nggak ketemu di ${clip.file}`
       );
     }
     return;
@@ -213,7 +225,7 @@ async function playLocalSound(voiceChannel, key, textChannel) {
   player.once(AudioPlayerStatus.Playing, () => {
     console.log(`🔊 Soundboard: ${clip.title}`);
     if (textChannel) {
-      textChannel.send(`🔊 Soundboard: **${clip.title}**`);
+      textChannel.send(`🗣️ 🔊 Soundboard: **${clip.title}**`);
     }
   });
 
@@ -224,9 +236,63 @@ async function playLocalSound(voiceChannel, key, textChannel) {
   player.on('error', (err) => {
     console.error('Soundboard player error:', err);
     if (textChannel) {
-      textChannel.send('❌ Soundboard error, coba lagi ya.');
+      textChannel.send('Soundboard error, coba lagi ya.');
     }
   });
+}
+
+async function analyzeImageWithGemini(imageUrl) {
+  try {
+    console.log('[Gemini] Downloading image:', imageUrl);
+    
+    const imageResponse = await axios.get(imageUrl, { 
+      responseType: 'arraybuffer',
+      timeout: 10000
+    });
+    
+    console.log('[Gemini] Image downloaded, resizing...');
+    
+    const resizedBuffer = await sharp(imageResponse.data)
+      .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+      .toBuffer();
+    
+    const base64Image = resizedBuffer.toString('base64');
+    
+    console.log('[Gemini] Resized to:', resizedBuffer.length, 'bytes');
+    
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.5-flash'
+    });
+    
+    console.log('[Gemini] Sending to Gemini API...');
+    
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Gemini timeout after 45s')), 45000)
+    );
+    
+    const result = await Promise.race([
+      model.generateContent([
+        {
+          inlineData: {
+            mimeType: 'image/png',
+            data: base64Image,
+          },
+        },
+        'Deskripsikan gambar ini dengan detail tapi singkat dalam bahasa Indonesia. Fokus ke hal-hal penting yang ada di gambar.',
+      ]),
+      timeoutPromise
+    ]);
+    
+    const response = await result.response;
+    const text = response.text();
+    
+    console.log('[Gemini] Response received:', text.substring(0, 100) + '...');
+    
+    return text;
+  } catch (error) {
+    console.error('[Gemini] Error:', error.message);
+    return null;
+  }
 }
 
 async function handleMessage(message) {
@@ -245,6 +311,176 @@ async function handleMessage(message) {
 
     const voiceChannel = message.member?.voice?.channel;
 
+  if (sub === 'joke') {
+  try {
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        {
+          role: 'system',
+          content: 'Kamu adalah comedian yang ahli bikin dad jokes Indonesia yang lucu dan konyol. Kasih 1 joke singkat aja, gak usah panjang-panjang. Jangan repetitif juga jokes nya.'
+        },
+        {
+          role: 'user',
+          content: 'Kasih dad joke yang lucu dong'
+        }
+      ],
+      temperature: 1.0,
+      max_completion_tokens: 150,
+    });
+
+    const joke = completion.choices?.[0]?.message?.content?.trim();
+    return message.reply(`${joke} 😂` || 'Eh joke nya ilang, coba lagi');
+  } catch (err) {
+    console.error('Groq joke error:', err);
+    return message.reply('Error pas bikin joke nih');
+  }
+}
+  
+  if (sub === 'userinfo' || sub === 'ui') {
+  try {
+    let targetUser = message.mentions.users.first() || message.author;
+    let member = message.guild.members.cache.get(targetUser.id);
+
+    if (!member) {
+      return message.reply('User tidak ditemukan di server ini');
+    }
+
+    const joinedAt = member.joinedAt;
+    const createdAt = targetUser.createdAt;
+    
+    const formatDate = (date) => {
+      return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    const daysSinceJoin = Math.floor((Date.now() - joinedAt) / (1000 * 60 * 60 * 24));
+    const daysSinceCreation = Math.floor((Date.now() - createdAt) / (1000 * 60 * 60 * 24));
+
+    const roles = member.roles.cache
+      .filter(role => role.name !== '@everyone')
+      .sort((a, b) => b.position - a.position)
+      .map(role => role.name)
+      .join(', ') || 'Tidak ada role';
+
+    const statusEmoji = {
+      online: '🟢 Online',
+      idle: '🟡 Idle',
+      dnd: '🔴 Do Not Disturb',
+      offline: '⚫ Offline'
+    };
+    const status = statusEmoji[member.presence?.status] || '⚫ Offline';
+
+    const infoText = `
+**👤 User Info: ${targetUser.tag}**
+
+**🆔 User ID:** ${targetUser.id}
+**📛 Nickname:** ${member.nickname || 'Tidak ada'}
+**📊 Status:** ${status}
+**🎨 Warna Role:** ${member.displayHexColor}
+
+**📅 Akun Dibuat:** ${formatDate(createdAt)} (${daysSinceCreation} hari lalu)
+**📥 Join Server:** ${formatDate(joinedAt)} (${daysSinceJoin} hari lalu)
+
+**🎭 Roles (${member.roles.cache.size - 1}):** ${roles}
+
+**🤖 Bot:** ${targetUser.bot ? 'Ya' : 'Tidak'}
+**👑 Owner Server:** ${message.guild.ownerId === targetUser.id ? 'Ya' : 'Tidak'}
+    `.trim();
+
+    await message.reply(infoText);
+    
+    try {
+      const avatarURL = targetUser.displayAvatarURL({ size: 256, dynamic: true });
+      await message.channel.send({ files: [avatarURL] });
+    } catch (avatarErr) {
+      console.error('Avatar fetch error:', avatarErr);
+    }
+    
+    return;
+
+  } catch (err) {
+    console.error('Userinfo error:', err);
+    return message.reply('Error pas ngambil info user nih');
+  }
+}
+
+  if (sub === 'serverinfo' || sub === 'si') {
+  try {
+    const guild = message.guild;
+    
+    const formatDate = (date) => {
+      return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    };
+
+    const daysSinceCreation = Math.floor((Date.now() - guild.createdAt) / (1000 * 60 * 60 * 24));
+
+    const members = guild.members.cache;
+    const bots = members.filter(m => m.user.bot).size;
+    const humans = members.size - bots;
+
+    const textChannels = guild.channels.cache.filter(c => c.type === 0).size;
+    const voiceChannels = guild.channels.cache.filter(c => c.type === 2).size;
+
+    const roleCount = guild.roles.cache.size - 1;
+
+    const emojiCount = guild.emojis.cache.size;
+
+    const boostLevel = guild.premiumTier;
+    const boostCount = guild.premiumSubscriptionCount || 0;
+
+    const serverInfo = `
+**🏠 Server Info: ${guild.name}**
+
+**🆔 Server ID:** ${guild.id}
+**👑 Owner:** <@${guild.ownerId}>
+**📅 Dibuat:** ${formatDate(guild.createdAt)} (${daysSinceCreation} hari lalu)
+
+**👥 Members:** ${guild.memberCount} total
+  ├─ 👤 Humans: ${humans}
+  └─ 🤖 Bots: ${bots}
+
+**💬 Channels:** ${guild.channels.cache.size} total
+  ├─ 📝 Text: ${textChannels}
+  └─ 🔊 Voice: ${voiceChannels}
+
+**🎭 Roles:** ${roleCount}
+**😀 Emojis:** ${emojiCount}
+
+**✨ Boost Status:**
+  ├─ Level: ${boostLevel}
+  └─ Boosts: ${boostCount}
+
+**🔒 Verification Level:** ${guild.verificationLevel}
+    `.trim();
+
+    await message.reply(serverInfo);
+    
+    if (guild.iconURL()) {
+      try {
+        const iconURL = guild.iconURL({ size: 256, dynamic: true });
+        await message.channel.send({ files: [iconURL] });
+      } catch (iconErr) {
+        console.error('Icon fetch error:', iconErr);
+      }
+    }
+    
+    return;
+
+  } catch (err) {
+    console.error('Serverinfo error:', err);
+    return message.reply('Error pas ngambil info server nih');
+  }
+}
   if (sub === 'play') {
   if (!voiceChannel) {
     return message.reply('Minimal kalo mau dengerin musik, lu di vois dulu bos');
@@ -252,7 +488,7 @@ async function handleMessage(message) {
 
   const query = args.join(' ');
   if (!query) {
-    return message.reply('kasih judul atau link bok- lagunya dong, contoh: `ditos play funky town`');
+    return message.reply('Kasih judul atau link bok- lagunya dong, contoh: `ditos play funky town`');
   }
 
   try {
@@ -329,7 +565,7 @@ async function handleMessage(message) {
   }
 
   if (query.includes('spotify.com')) {
-    return message.reply('blm bisa spotify yah azril~ coba youtube aja');
+    return message.reply('Blm bisa spotify yah azril~ coba youtube aja');
   }
 
   try {
@@ -352,7 +588,7 @@ if (isYTUrl) {
   if (videoId) {
     const info = await ytSearch({ videoId });
     if (!info || !info.title) {
-      return message.reply('gak bisa ambil info videonya');
+      return message.reply('Gak bisa ambil info videonya');
     }
     url = `https://www.youtube.com/watch?v=${videoId}`;
     title = info.title;
@@ -415,7 +651,7 @@ if (isYTUrl) {
     queue.songs.push({ title, url });
 
     if (queue.songs.length === 1) {
-      await message.reply(`oke, masuk antrian: **${title}**`);
+      await message.reply(`Oke, masuk antrian: **${title}**`);
       playNext(guildId);
     } else {
       await message.reply(
@@ -424,7 +660,7 @@ if (isYTUrl) {
     }
   } catch (err) {
     console.error('Play command error:', err);
-    return message.reply('ada yang error pas nyari lagunya');
+    return message.reply('Ada yang error pas nyari lagunya');
   }
 
   return;
@@ -433,17 +669,17 @@ if (isYTUrl) {
     if (sub === 'skip') {
       const queue = musicQueues.get(guildId);
       if (!queue || !queue.songs.length) {
-        return message.reply('skip apaan, gada yang disetel');
+        return message.reply('Skip apaan, gada yang disetel');
       }
 
       queue.player.stop(); 
-      return message.reply('oke, skip');
+      return message.reply('Oke, skip');
     }
 
     if (sub === 'stop') {
       const queue = musicQueues.get(guildId);
       if (!queue) {
-        return message.reply('stop apaan, gada yang disetel');
+        return message.reply('Stop apaan, gada yang disetel');
       }
 
       queue.songs = [];
@@ -451,7 +687,7 @@ if (isYTUrl) {
       queue.connection.destroy();
       musicQueues.delete(guildId);
 
-      return message.reply('nooo aku di kik :sob:');
+      return message.reply('Nooo aku di kik :sob:');
     }
 
     if (sub === 'sb') {
@@ -472,7 +708,7 @@ if (isYTUrl) {
       return;
     }
 
-    return message.reply('cuma ngerti `ditos play`, `ditos skip`, `ditos stop`, sama `ditos sb <nama>` buat musik & soundboard');
+    return message.reply('Cuma ngerti `ditos play`, `ditos skip`, `ditos stop`, sama `ditos sb <nama>` buat musik & soundboard');
   }
 
   if (content === '!ditoshelp') {
@@ -486,47 +722,86 @@ if (isYTUrl) {
   }
 
   if (content.startsWith('!ditos')) {
+    console.log('[!ditos command triggered]');
     const prompt = content.slice('!ditos'.length).trim();
-    if (!prompt) {
-      return message.reply(
-        'apcb, kalo ngetik yang jelas'
-      );
-    }
+  if (!prompt && message.attachments.size === 0) {
+    return message.reply('apcb, kalo ngetik yang jelas');
+  }
 
     try {
-      const completion = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'Kamu adalah bot Discord bernama Ditos. Gaya bicara santai, campur Indonesia dan sedikit English. Suka ngejokes, konyol, kadang nyolot dikit tapi tetap bantu jelasin dengan jelas dan ringkas. Jangan terlalu panjang, jangan formal.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.8,
-        max_completion_tokens: 300,
-      });
-
-      const replyText = completion.choices?.[0]?.message?.content?.trim();
-
-      if (!replyText) {
-        return message.reply(
-          'Ditos lagi ngeblank, coba tanya sekali lagi dong 😵‍💫'
-        );
-      }
-
-      return message.reply(replyText);
-    } catch (error) {
-      console.error('Groq error:', error);
-      return message.reply(
-        'otak Groq-nya lagi error nih, coba sebentar lagi ya 😭'
-      );
+      const userId = message.author.id;
+      if (!conversationHistory.has(userId)) {
+      conversationHistory.set(userId, []);
     }
+
+    const history = conversationHistory.get(userId);
+
+    let imageDescription = null;
+    if (message.attachments.size > 0) {
+    const attachment = message.attachments.first();
+    if (attachment.contentType?.startsWith('image/')) {
+    imageDescription = await analyzeImageWithGemini(attachment.url);
+    console.log('[Debug] Image description:', imageDescription);
   }
+}
+
+    let finalPrompt = prompt || 'Liat gambar ini dong';
+    if (imageDescription) {
+    finalPrompt = `${finalPrompt}\n\n[Ada gambar: ${imageDescription}]`;
+    console.log('[Debug] Final prompt:', finalPrompt.substring(0, 200));
+    }
+
+    history.push({
+    role: 'user',
+    content: finalPrompt,
+    });
+
+    if (history.length > 20) {
+      history.splice(0, history.length - 20);
+    }
+
+      const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Kamu adalah bot Discord bernama Ditos. Gaya bicara santai, campur Indonesia dan sedikit English. Suka ngejokes, konyol, kadang nyolot dikit tapi tetap bantu jelasin dengan jelas dan ringkas. Jangan terlalu panjang, jangan formal. Kamu juga jarang tetapi akan menggunakan kata seperti "Bjirlah, anjeng, biji" Kamu akan berbicara seadanya dan frontal (Contoh: "Lah gwa mah vergil, lah elu mirror demon", "Goofy ass looking ahh". Kamu tidak akan menggunakan emoji. Kamu juga akan memberi informasi sesingkat mungkin. PENTING: Kalo ada text "[Ada gambar: ...]" di pesan user, itu artinya user kirim gambar dan kamu bisa "liat" gambar tersebut lewat deskripsi yang dikasih. Jangan bilang kamu gak bisa liat gambar, langsung aja respon sesuai deskripsinya.',
+        },
+        ...history,
+      ],
+      temperature: 0.8,
+      max_completion_tokens: 300,
+    });
+
+    const replyText = completion.choices?.[0]?.message?.content?.trim();
+
+    if (!replyText) {
+      return message.reply('Lagi ngeblank, coba tanya sekali lagi dong');
+    }
+    
+    history.push({
+      role: 'assistant',
+      content: replyText,
+    });
+
+    return message.reply(replyText);
+  } catch (error) {
+    console.error('Groq error:', error);
+    return message.reply(`Otak ai nya lagi error nih, coba sebentar lagi ya atau tunggu <@${OWNER_ID}> benerin`);
+  }
+}
+
+  if (content === '!ditosclear') {
+  const userId = message.author.id;
+  conversationHistory.delete(userId);
+  return message.reply('Oke, reset');
+  }
+
+  setInterval(() => {
+    const now = Date.now();
+    const TIMEOUT = 30 * 60 * 1000; 
+  }, 60000);
 
   if (content === '!ditosping') {
     return message.reply('!pong');
