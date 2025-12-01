@@ -1,5 +1,4 @@
 ﻿# bot-castorice-sikat-gigi
 
-project gabut
-
-!help buat list command
+Project Gabut
+Bikin bot discord pake nama temen gw
