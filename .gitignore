@@ -3,3 +3,6 @@ node_modules/
 # Local bot state (should not be committed)
 memory.json
 reminders.json
+Log/
+temp/
+trivia-score.json
