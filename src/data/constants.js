@@ -17,7 +17,7 @@ const SOUNDBOARD_CLIPS = {
     },
 };
 
-const COMMAND_LIST = { // List Commands
+const COMMAND_LIST = {
     'help': 'Menampilkan semua command',
     'ping': 'Cek latency bot (bukan ping kamu ke Discord)',
     'chat/c': 'Ngobrol ama Bot Ditos pake LLM Groq',

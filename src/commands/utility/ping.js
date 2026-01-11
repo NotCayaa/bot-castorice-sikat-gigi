@@ -3,7 +3,6 @@ const { EmbedBuilder } = require('discord.js');
 module.exports = {
     name: 'ping',
     description: 'Cek latency bot',
-    aliases: ['p'],
     async execute(message, args, client) {
         const msg = await message.reply('Testing ping...');
 

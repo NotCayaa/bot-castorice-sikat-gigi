@@ -4,7 +4,35 @@ const { musicQueues } = require('../data/state');
 
 function generateMusicEmbed(guildId) { // Embed music player premium
     const queue = musicQueues.get(guildId);
-    if (!queue || !queue.nowPlaying) return null;
+    if (!queue) return null;
+
+    if (!queue.nowPlaying) {
+        // IDLE EMBED
+        const volume = typeof queue.volume === "number" ? queue.volume : 1;
+        const volumePercent = Math.round(volume * 100);
+
+        return new EmbedBuilder()
+            .setTitle("🎧 Ditos Music Player (Idle)")
+            .setDescription("Gak ada lagu yang lagi diputer. Tambahin lagu atau klik tombol di bawah.")
+            .addFields(
+                {
+                    name: "📻 Voice Channel",
+                    value: queue.voiceChannel ? `<#${queue.voiceChannel.id}>` : "Tidak terhubung",
+                    inline: true,
+                },
+                {
+                    name: "🔊 Volume",
+                    value: `${volumePercent}%`,
+                    inline: true,
+                },
+                {
+                    name: "🎶 Antrian",
+                    value: "Kosong",
+                    inline: false,
+                }
+            )
+            .setColor("#95a5a6"); // Greyish color for idle
+    }
 
     const track = queue.nowPlaying;
 

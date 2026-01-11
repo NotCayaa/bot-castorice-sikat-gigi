@@ -12,15 +12,18 @@ module.exports = {
             return message.reply('Stop apaan, gada yang disetel');
         }
 
+        // Clear songs
         queue.songs = [];
+        queue.nowPlaying = null; // [FIX] Clear now playing
+        queue.stopOnIdle = true; // [NEW FLAG]
         queue.player.stop();
-        queue.connection.destroy();
-        musicQueues.delete(guildId);
 
         const embed = generateMusicEmbed(guildId);
         if (embed) {
-            return message.channel.send({ embeds: [embed], components: [getMusicButtons(guildId)] });
+            // Embed bakal update jadi "Tidak ada lagu", tapi gpp
+            // Atau kita apus embed last playing?
         }
-        return message.reply('Nooo aku di kik :sob:');
+
+        return message.reply('⏹ Musik distop, antrian dihapus. (Bot stay di voice)');
     },
 };

@@ -5,9 +5,11 @@
         "reminders.json",
         "settings.json",
         "Log/**/*",
-        "temp/**/*"
+        "temp/**/*",
+        "src/data/songCache.json"
     ],
     "watch": [
+        "src",
         "index.js"
     ],
     "ext": "js"

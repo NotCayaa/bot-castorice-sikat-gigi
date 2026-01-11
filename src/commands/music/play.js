@@ -4,7 +4,7 @@ const {
     NoSubscriberBehavior,
     AudioPlayerStatus
 } = require('@discordjs/voice');
-const ytpl = require('ytpl');
+const ytdlExec = require('yt-dlp-exec'); // [CHANGED] Use yt-dlp
 const ytSearch = require('yt-search');
 const { musicQueues } = require('../../data/state');
 const { playNext } = require('../../utils/voiceManager');
@@ -31,10 +31,24 @@ module.exports = {
         let url;
         let title;
 
-        // --- YOUTUBE PLAYLIST ---
-        try {
-            if (await ytpl.validateID(query)) {
-                const playlist = await ytpl(query, { limit: 100 });
+        // --- YOUTUBE PLAYLIST (via yt-dlp) ---
+        // Detect playlist URL pattern simple
+        const isPlaylist = query.includes('list=') && (query.includes('youtube.com') || query.includes('youtu.be'));
+
+        if (isPlaylist) {
+            try {
+                await message.reply('Lagi ngambil data playlist, tunggu bentar...');
+
+                // Fetch metadata ONLY using yt-dlp (fast)
+                const output = await ytdlExec(query, {
+                    flatPlaylist: true,
+                    dumpSingleJson: true,
+                    noWarnings: true,
+                });
+
+                if (!output || !output.entries) {
+                    throw new Error('Playlist kosong atau gak kebaca.');
+                }
 
                 let queue = musicQueues.get(guildId);
                 let wasEmpty = !queue || !queue.songs || queue.songs.length === 0;
@@ -61,19 +75,10 @@ module.exports = {
                         connection,
                         player,
                         songs: [],
+                        volume: 1, // Default volume
                     };
 
                     musicQueues.set(guildId, queue);
-
-                    player.on(AudioPlayerStatus.Playing, () => {
-                        const embed = generateMusicEmbed(guildId);
-                        if (embed) {
-                            queue.textChannel.send({
-                                embeds: [embed],
-                                components: getMusicButtons(guildId)
-                            });
-                        }
-                    });
 
                     player.on(AudioPlayerStatus.Idle, () => {
                         queue.songs.shift();
@@ -89,33 +94,28 @@ module.exports = {
                     wasEmpty = true;
                 }
 
-                for (const item of playlist.items) {
-                    queue.songs.push({
-                        title: item.title,
-                        url: item.shortUrl || item.url,
-                        requestedBy: message.author.tag,
-                    });
-                }
+                const newSongs = output.entries.map(item => ({
+                    title: item.title,
+                    url: item.url || `https://www.youtube.com/watch?v=${item.id}`,
+                    requestedBy: message.author.tag
+                }));
 
-                await message.reply(
-                    `Nambahin playlist **${playlist.title}** (${playlist.items.length} lagu) ke antrian`
+                queue.songs.push(...newSongs);
+
+                await message.channel.send(
+                    `✅ Berhasil nambahin playlist **${output.title || 'Unknown Playlist'}** (${newSongs.length} lagu) ke antrian.`
                 );
 
                 if (wasEmpty) {
                     playNext(guildId);
                 }
                 return;
+
+            } catch (err) {
+                console.error('[Play] Playlist Fail:', err);
+                // Jangan return, lanjut coba anggap sebagai single video siapa tau linknya aneh
+                message.channel.send('Gagal baca sebagai playlist, nyoba mode single video...');
             }
-        } catch (err) {
-            console.error('Playlist error:', err);
-            // Fallback if needed, but original returned here.
-            // But we can just let it flow if validateID was false? 
-            // Original logic has 'return' inside the try block if successful.
-            // If error, it replies and returns.
-            await message.reply(
-                'Gagal baca playlist YouTube-nya.. coba link lain atau cek lagi URL-nya.'
-            );
-            return;
         }
 
         // --- SPOTIFY ---
@@ -152,11 +152,6 @@ module.exports = {
                     const playlistData = await spotifyApi.getPlaylist(id);
                     const playlist = playlistData.body;
 
-                    await message.reply(
-                        `Converting Spotify playlist: **${playlist.name}** (${playlist.tracks.total} lagu)...\n` +
-                        `Ini bakal agak lama ya, sabar...`
-                    );
-
                     let queue = musicQueues.get(guildId);
                     let wasEmpty = !queue || !queue.songs || queue.songs.length === 0;
 
@@ -179,40 +174,45 @@ module.exports = {
                             connection,
                             player,
                             songs: [],
+                            volume: 1,
                         };
                         musicQueues.set(guildId, queue);
 
-                        player.on(AudioPlayerStatus.Idle, () => { queue.songs.shift(); playNext(guildId); });
-                        player.on('error', (err) => { console.error('Player error:', err); queue.songs.shift(); playNext(guildId); });
+                        // Basic event listeners handling
+                        player.on(AudioPlayerStatus.Idle, () => {
+                            queue.songs.shift();
+                            playNext(guildId);
+                        });
+                        player.on('error', (err) => {
+                            console.error('Player error:', err);
+                            queue.songs.shift();
+                            playNext(guildId);
+                        });
 
                         wasEmpty = true;
                     }
 
-                    const tracks = playlist.tracks.items.slice(0, 50).filter(item => item.track);
-                    const searchPromises = tracks.map(async (item) => {
-                        const track = item.track;
-                        const searchQuery = `${track.name} ${track.artists.map(a => a.name).join(' ')}`;
-                        try {
-                            const res = await ytSearch(searchQuery);
-                            const video = res.videos && res.videos.length ? res.videos[0] : null;
-                            if (video) {
-                                return {
-                                    title: `${track.name} - ${track.artists[0].name}`,
-                                    url: video.url,
-                                    requestedBy: message.author.tag,
-                                };
-                            }
-                        } catch (err) { console.error(`[Spotify] Skip: ${searchQuery}`); }
-                        return null;
-                    });
+                    // [LAZY LOAD] Convert to metadata first
+                    const tracks = playlist.tracks.items.slice(0, 100); // Limit 100 or higher
+                    const newSongs = [];
 
-                    const results = await Promise.all(searchPromises);
-                    const validSongs = results.filter(song => song !== null);
-                    queue.songs.push(...validSongs);
+                    for (const item of tracks) {
+                        if (item.track) {
+                            const track = item.track;
+                            const simpleTitle = `${track.name} - ${track.artists[0].name}`;
+                            newSongs.push({
+                                title: simpleTitle,
+                                url: null, // Unresolved
+                                isResolved: false,
+                                requestedBy: message.author.tag,
+                            });
+                        }
+                    }
 
-                    const successCount = validSongs.length;
+                    queue.songs.push(...newSongs);
+
                     await message.reply(
-                        `✅ Berhasil convert **${successCount}/${tracks.length}** lagu dari playlist **${playlist.name}**`
+                        `✅ Berhasil nambahin playlist **${playlist.name}** (${newSongs.length} lagu) ke antrian (Mode Cepat).`
                     );
 
                     if (wasEmpty && queue.songs.length > 0) {
@@ -222,29 +222,80 @@ module.exports = {
                 }
                 // ALBUM
                 else if (type === 'album') {
-                    // Logic album skipped per original code instruction
-                    return message.reply('Album support masih WIP, coba playlist dulu ya');
+                    const albumData = await spotifyApi.getAlbum(id);
+                    const album = albumData.body;
+
+                    let queue = musicQueues.get(guildId);
+                    let wasEmpty = !queue || !queue.songs || queue.songs.length === 0;
+
+                    if (!queue) {
+                        const connection = joinVoiceChannel({
+                            channelId: voiceChannel.id,
+                            guildId: voiceChannel.guild.id,
+                            adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+                            selfDeaf: false,
+                        });
+                        const player = createAudioPlayer({
+                            behaviors: { noSubscriber: NoSubscriberBehavior.Play },
+                        });
+                        connection.subscribe(player);
+                        queue = {
+                            voiceChannel,
+                            textChannel: message.channel,
+                            connection,
+                            player,
+                            songs: [],
+                            volume: 1,
+                        };
+                        musicQueues.set(guildId, queue);
+
+                        player.on(AudioPlayerStatus.Idle, () => {
+                            queue.songs.shift();
+                            playNext(guildId);
+                        });
+                        player.on('error', (err) => {
+                            console.error('Player error:', err);
+                            queue.songs.shift();
+                            playNext(guildId);
+                        });
+                        wasEmpty = true;
+                    }
+
+                    // [LAZY LOAD] Album tracks
+                    const tracks = album.tracks.items;
+                    const newSongs = [];
+
+                    for (const track of tracks) {
+                        const simpleTitle = `${track.name} - ${track.artists[0].name}`;
+                        newSongs.push({
+                            title: simpleTitle,
+                            url: null,
+                            isResolved: false,
+                            requestedBy: message.author.tag,
+                        });
+                    }
+
+                    queue.songs.push(...newSongs);
+                    await message.reply(
+                        `✅ Berhasil nambahin album **${album.name}** (${newSongs.length} lagu) ke antrian.`
+                    );
+
+                    if (wasEmpty && queue.songs.length > 0) {
+                        playNext(guildId);
+                    }
+                    return;
                 }
 
             } catch (err) {
                 console.error('Spotify error:', err);
-                if (err.statusCode === 401) {
-                    return message.reply('Spotify API token expired, coba lagi bentar lagi');
-                }
-                if (err.statusCode === 404) {
-                    return message.reply(
-                        'Spotify balas 404 (Resource not found). Biasanya ini terjadi kalo playlist-nya ' +
-                        'tipe khusus / dibuat Spotify / personal (Made For You) yang gak bisa diambil lewat API. ' +
-                        'Coba pake playlist lain atau link track biasa.'
-                    );
-                }
+                if (err.statusCode === 401) return message.reply('Spotify API token expired.');
+                if (err.statusCode === 404) return message.reply('Spotify playlist not found (mungkin private?).');
                 return message.reply('Error pas convert dari Spotify: ' + (err.message || err));
             }
         }
 
         // --- YOUTUBE DIRECT / SEARCH ---
         try {
-            // NEW: Only search if URL isn't already set (e.g. from Spotify)
             if (!url) {
                 const isYTUrl = query.includes('youtube.com/watch') || query.includes('youtu.be/');
 
@@ -309,6 +360,7 @@ module.exports = {
                 connection,
                 player,
                 songs: [],
+                volume: 1
             };
 
             musicQueues.set(guildId, queue);
