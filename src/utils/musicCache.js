@@ -48,15 +48,6 @@ class MusicCache {
                 if (data.learningCache) {
                     this.learningCache = new Map(Object.entries(data.learningCache));
                 } else {
-                    // Legacy flatten format (SpotifyID -> URL/ID)
-                    // Probably safer to just load it all into learning cache for now if it looks like IDs?
-                    // But wait, legacy cache stored *URL* not ID. 
-                    // Let's just load it as is, but logic will need to handle URL vs ID.
-                    // For safety, we start fresh-ish for structure but try to import.
-
-                    // Actually, let's keep it simple: Just load what matches our expected structure,
-                    // or start clean if we want strictness.
-                    // Let's try to migrate:
                     for (const [key, value] of Object.entries(data)) {
                         // If value looks like a video ID (11 chars)
                         if (typeof value === 'string' && value.length === 11) {

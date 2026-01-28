@@ -24,12 +24,10 @@ class MusicService {
         let results = [];
 
         try {
-            // --- ATTEMPT 1: Standard Search ---
             const res = await ytSearch(searchQuery);
             if (res && res.videos.length > 0) {
                 results = res.videos;
             } else {
-                // --- ATTEMPT 2: Fallback to "Official" ---
                 console.log('[MusicService] Fallback to Official...');
                 const resOfficial = await ytSearch(`${searchQuery} official`);
                 if (resOfficial && resOfficial.videos.length > 0) {
@@ -121,27 +119,17 @@ class MusicService {
                 noCheckCertificates: true,
                 preferFreeFormats: true,
                 youtubeSkipDashManifest: true,
-                forceIpv4: true // [CRITICAL] Fix for IPv6 throttling
+                forceIpv4: true
             });
 
-            // Extract best audio format
-            // yt-dlp usually returns 'best' formats in formats list, but we want audio
-            // The JSON 'url' property is often the video+audio or just video.
-            // We need to find the audio-only format if possible.
-
             let streamUrl = null;
-
-            // Prioritize opus/m4a audio only
             const formats = output.formats || [];
-            // Sort by ABR (Audio Bitrate) desc
             formats.sort((a, b) => (b.abr || 0) - (a.abr || 0));
-
             const audioOnly = formats.find(f => f.acodec !== 'none' && f.vcodec === 'none');
 
             if (audioOnly) {
                 streamUrl = audioOnly.url;
             } else {
-                // Fallback to whatever URL is top level or best matching
                 streamUrl = output.url;
             }
 

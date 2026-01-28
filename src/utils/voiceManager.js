@@ -113,15 +113,7 @@ async function playNext(guildId) {
         if (!song.videoId) throw new Error("Could not extract Video ID");
 
         console.log(`[Music] Streaming: ${song.title}`);
-
-        // [MUSIC SERVICE - STREAM]
-        // This checks cache first, then fetches if needed.
         const streamUrl = await musicService.getStreamUrl(song.videoId);
-
-        // [HYBRID PIPELINE]
-        // Fetch -> FFmpeg (Stdin) -> Discord (Opus)
-        // This is the robust method that solves connection resets AND is fast (no yt-dlp spawn if cached).
-
         const headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Referer': 'https://www.youtube.com/',
@@ -131,14 +123,9 @@ async function playNext(guildId) {
         const response = await fetch(streamUrl, { headers });
 
         if (!response.ok) {
-            // If cache is stale (403), we might need to invalidate and refetch.
-            // But musicService usually fetches fresh URL. If it fails here, it might be a true network error.
             if (response.status === 403) {
                 console.warn("[Music] 403 Forbidden on Cached URL. Invalidating and Retrying...");
                 musicCache.streamCache.delete(song.videoId); // Manually clear
-                // Recurse? Or just throw to trigger next track?
-                // Ideally we call getStreamUrl again which fetches fresh. 
-                // For now let's just throw, usually playNext loop handles it.
                 throw new Error("Stream 403 Forbidden");
             }
             throw new Error(`Stream fetch failed: ${response.status}`);
@@ -175,10 +162,6 @@ async function playNext(guildId) {
             inputType: StreamType.OggOpus,
             inlineVolume: true,
         });
-
-        // Debug logging
-        // child.stdout.on('data', () => {}); 
-        // child.stderr.on('data', d => console.log(`[FFmpeg] ${d}`));
 
         queue.player.play(resource);
         resource.volume.setVolume(queue.volume || 1);

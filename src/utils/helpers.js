@@ -3,12 +3,8 @@ const fsp = fs.promises;
 const { EmbedBuilder } = require('discord.js');
 const { channelHistory, setMemoryData, setTriviaScore } = require('../data/state');
 const { MEMORY_FILE } = require('../config');
-// Warning: TRIVIA_SCORE_FILE was not in config.js! I need to add it or derive it.
-// Original index.js: const TRIVIA_SCORE_FILE = path.join(__dirname, 'trivia-score.json');
-
 const path = require('path');
 const TRIVIA_FILE_PATH = path.join(__dirname, '../../trivia-score.json');
-// MEMORY_FILE is in config.js
 
 const MAX_CHANNEL_HISTORY = 50;
 
@@ -422,12 +418,6 @@ async function searchWeb(query) { // Google search pake API Google CSE
     const url =
         `https://www.googleapis.com/customsearch/v1` +
         `?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}`;
-
-    // Use node-fetch loaded at top of file? helpers.js usually uses standard fetch or needs import.
-    // In index.js: const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-    // I need to ensure fetch is available here.
-    // I'll add the dynamic import wrapper inside the function if needed, or assume global fetch (Node 18+).
-    // But user environment might be Node 16. safely use the wrapper from index.js.
     const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
     const res = await fetch(url);

@@ -6,11 +6,6 @@ module.exports = {
     aliases: ['pilih'],
     description: 'Minta bot milihin sesuatu dari opsi yang dikasih',
     async execute(message, args, client, prefix) {
-        // Ambil full text setelah prefix, biar newline tetep kebaca
-        // Note: commandHandler passes 'prefix' as 4th arg now (we added that in step 639 implicitly? No wait, we verified messageCreate passes it? Yes line 86 of messageCreate.js)
-        // Wait, I need to check if I updated messageCreate to pass prefix. 
-        // Checking messageCreate view from Step 639... yes: await command.execute(message, args, client, prefix);
-
         // Re-construct logic
         const sub = 'choice'; // simplified assumption, or check alias
         const lowerContent = message.content.toLowerCase();

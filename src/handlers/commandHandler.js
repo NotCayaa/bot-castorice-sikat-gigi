@@ -3,14 +3,9 @@ const path = require('path');
 
 module.exports = (client) => {
     client.commands = new Map();
-    client.aliases = new Map(); // Map alias -> commandName
+    client.aliases = new Map();
 
     const commandsPath = path.join(__dirname, '../commands');
-
-    // Recursively read commands folder? Or just category folders?
-    // Let's assume categorization by folder for future-proof.
-    // Or flat for now. Let's do recursive.
-
     const readCommands = (dir) => {
         const files = fs.readdirSync(dir);
 

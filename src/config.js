@@ -10,14 +10,6 @@ module.exports = {
     // Paths
     TEMP_DIR: path.join(__dirname, '../temp'),
     MEMORY_FILE: path.join(__dirname, '../memory.json'),
-    // root/index.js -> root/memory.json
-    // root/src/config.js -> root/memory.json => ../memory.json
-    // Let's verify path logic carefully.
-    // __dirname (src/) -> .. (root) -> memory.json
-
-    getPath: (filename) => path.join(__dirname, '../..', filename), // Safer helper?
-    // Actually, standard is to use process.cwd() or path relative to main script.
-    // But let's stick to relative for safety.
-
+    getPath: (filename) => path.join(__dirname, '../..', filename),
     ROOT_DIR: path.resolve(__dirname, '../')
 };

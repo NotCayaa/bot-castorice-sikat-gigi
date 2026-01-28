@@ -1,21 +1,9 @@
 const { channelHistory, botActivityTracker, lastUserActivity, getMemoryData } = require('../data/state');
-// Note: getMemoryData imported but accessed via MEMORY_DATA property if passed or imported directly?
-// In state.js I exported: memoryData (getter).
-// Let's rely on importing memoryData via require('../data/state').memoryData usage pattern inside functions to get fresh ref.
-
 const { memoryData } = require('../data/state'); // This returns the object AT REQUIRE TIME. 
-// If state.js changes MEMORY_DATA reference, this variable won't update.
-// Better to use getters or access properties on the module object.
-// const state = require('../data/state'); -> state.memoryData (getter) works.
-
 const state = require('../data/state');
-
 const { callGroqWithFallback } = require('./groqManager');
 const { MAX_CHANNEL_HISTORY } = require('../data/constants');
 
-// Original helper was local in index.js, I need to duplicate filter logic or import if I made it public
-// I didn't export `filterChannelHistory` in helpers.js. 
-// I'll add it here locally to match index.js behavior exactly and avoid external dependency mismatch.
 function filterChannelHistory(messages) {
     return messages.filter(m => {
         const isBotMessage = m.username?.includes('Bot');
@@ -75,30 +63,21 @@ function shouldBotReply(message) {
         return false;
     }
 
-    let chance = AUTO_CHAT_CONFIG.replyChance; // default 30%? Wait, index.js said 15% in comment but 30 in config?
-    // index.js line 1514: let chance = AUTO_CHAT_CONFIG.replyChance; // 15% (comment says 15, config says 30)
-    // I will trust the config value (30).
-
+    let chance = AUTO_CHAT_CONFIG.replyChance;
     const content = message.content.toLowerCase();
-
-    // 1. Trigger keywords
     const hasTrigger = AUTO_CHAT_CONFIG.triggerKeywords.some(kw => content.includes(kw.toLowerCase()));
     if (hasTrigger) {
         chance = Math.min(chance * 2.5, 80);
     }
 
-    // 2. Mention bot
     if (message.mentions.has(message.client.user.id)) {
         chance = 90;
     }
 
-    // 3. Question mark
     if (content.includes('?')) chance = Math.min(chance * 1.3, 70);
 
-    // 4. Long message
     if (message.content.length > 100) chance = Math.min(chance * 1.2, 65);
 
-    // 5. Anti-spam penalty
     const chHistory = channelHistory.get(channelId) || [];
     const recentMessages = filterChannelHistory(chHistory).slice(-5);
 
@@ -212,7 +191,4 @@ async function generateAutoReply(message) {
         return null;
     }
 }
-
-// ... sendIdleMessage implementation (omitted for brevity as user focused on blacklist/personality) ...
-
 module.exports = { shouldBotReply, generateAutoReply, AUTO_CHAT_CONFIG };

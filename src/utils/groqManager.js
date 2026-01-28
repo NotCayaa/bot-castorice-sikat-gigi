@@ -21,7 +21,7 @@ function getGroqClient() { // Get Groq client with current key
         throw new Error('No Groq API keys available in .env');
     }
 
-    // ✅ CHANGED: Cari key yang available (gak cooldown)
+    // Cari key yang available
     const now = Date.now();
 
     for (let i = 0; i < GROQ_KEYS.length; i++) {

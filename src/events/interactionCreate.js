@@ -45,19 +45,16 @@ module.exports = {
 
         if (id === "music_stop") {
             data.songs = [];
-            data.nowPlaying = null; // [FIX] Clear now playing biat embed jadi idel
+            data.nowPlaying = null;
             data.stopOnIdle = true;
             data.player.stop();
 
-            // Reply dulu biar ada feedback
             await interaction.reply({
                 content: `⏹ Musik distop dan antrian dihapus oleh ${interaction.user.username}.`
             });
 
-            // Update Embed message manual karena kita udah reply
             const embed = generateMusicEmbed(guildId);
             if (embed) {
-                // message interaction = message di mana button berada
                 return interaction.message.edit({
                     embeds: [embed],
                     components: getMusicButtons(guildId)
@@ -75,11 +72,10 @@ module.exports = {
         }
 
         if (id === "music_vol_up") {
-            data.volume = Math.min((data.volume || 1) + 0.1, 2); // max 200%
+            data.volume = Math.min((data.volume || 1) + 0.1, 2);
             if (data.player.state.resource) {
                 data.player.state.resource.volume.setVolume(data.volume);
             }
-            // Fallthrough to update embed (don't reply to avoid double interaction)
         }
 
         if (id === "music_vol_down") {
@@ -87,10 +83,8 @@ module.exports = {
             if (data.player.state.resource) {
                 data.player.state.resource.volume.setVolume(data.volume);
             }
-            // Fallthrough to update embed
         }
 
-        // Update embed setelah action
         const embed = generateMusicEmbed(guildId);
         if (embed) {
             return interaction.update({
@@ -99,7 +93,6 @@ module.exports = {
             });
         }
 
-        // Default cleanup if embed fails
         try {
             if (!interaction.replied && !interaction.deferred) {
                 return interaction.update({ components: [] }).catch(() => { });

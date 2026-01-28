@@ -1,14 +1,7 @@
 const fs = require('fs');
 const fsp = fs.promises;
-const path = require('path'); // Perlu path buat REMINDERS_FILE
-
-// Kita butuh client untuk fetch user/channel, jadi restartAllReminders perlu terima client sebagai argumen
-// atau kita export function yang terima client.
-
-const REMINDERS_FILE = path.join(__dirname, '../../reminders.json'); // Adjust path
-// Note: Original code uses relative to __dirname (root). 
-// src/utils/reminderManager.js -> ../../reminders.json
-
+const path = require('path');
+const REMINDERS_FILE = path.join(__dirname, '../../reminders.json');
 async function loadReminders() {
     try {
         const raw = await fsp.readFile(REMINDERS_FILE, 'utf8');

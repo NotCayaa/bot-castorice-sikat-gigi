@@ -2,14 +2,9 @@ const { ActivityType } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const { setBotName } = require('../utils/logger');
-const { loadMemory, loadTriviaScore, setMemoryData, setTriviaScore } = require('../utils/helpers'); // Ops, circular dependency check?
-// helpers.js imports state.js. ready.js imports helpers.js. 
-// state.js does NOT import helpers.js. SAFE.
-
+const { loadMemory, loadTriviaScore, setMemoryData, setTriviaScore } = require('../utils/helpers');
 const { restartAllReminders } = require('../utils/reminderManager');
 const { TEMP_DIR } = require('../config');
-
-// Spotify (optional)
 const SpotifyWebApi = require('spotify-web-api-node');
 const spotifyApi = new SpotifyWebApi({
     clientId: process.env.SPOTIFY_CLIENT_ID,
@@ -32,13 +27,8 @@ module.exports = {
     once: true,
     async execute(client) {
         setBotName(client.user.username);
-
-        // Clean _TEMP
         if (fs.existsSync(TEMP_DIR)) {
             try {
-                // fs.rmSync(TEMP_DIR, { recursive: true, force: true }); 
-                // Better to just delete files inside, rmSync can be permission heavy on Windows
-                // But original code did rmSync.
                 const files = fs.readdirSync(TEMP_DIR);
                 for (const file of files) {
                     fs.unlinkSync(path.join(TEMP_DIR, file));
@@ -53,13 +43,8 @@ module.exports = {
 
         // Load Memory
         try {
-            const mem = await loadMemory(); // Imported from helpers
-            // Sync to state (loadMemory helper already returns it, but we need to set global var in state)
-            // Wait, helpers.loadMemory just returns object. state.setMemoryData needs to be called.
-            // My helpers.js implementation:
-            // async function loadMemory() { ... return JSON.parse... }
-            // So I must call setMemoryData here.
-            const { setMemoryData, setTriviaScore } = require('../data/state'); // Require setter specifically
+            const mem = await loadMemory();
+            const { setMemoryData, setTriviaScore } = require('../data/state');
             setMemoryData(mem);
             console.log("[Bot Ditos] Memory loaded:", Object.keys(mem).length, "items");
         } catch (err) {

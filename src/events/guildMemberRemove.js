@@ -43,23 +43,13 @@ module.exports = {
             });
         }
 
-        // Notif member leave
-        // Note: original code only had start, logic ends at line 400 in view
-        // Viewing Step 292 ends at 400.
-        // I need to be sure what happens after line 400.
-        // But typically it sends an embed.
-        // Assuming structure similar to Welcome.
-        // I will write standard logic using what variables I have.
-        // Original line 400: `}` (end of if).
-
-        // I'll create an embed similar to welcome.
-        const embed = new EmbedBuilder() // Use class for D.js v14
+        const embed = new EmbedBuilder()
             .setTitle('👋 Selamat Tinggal!')
             .setDescription(
                 `Yah, **${member.user.username}** keluar dari server.\n` +
                 `Semoga harimu menyenangkan di luar sana!`
             )
-            .setColor(0xed4245) // merah soft
+            .setColor(0xed4245)
             .setThumbnail(avatarURL)
             .addFields(
                 {
