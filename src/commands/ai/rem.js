@@ -22,7 +22,6 @@ module.exports = {
         }
 
         const memory = state.memoryData;
-
         const userId = isGlobal ? 'global' : message.author.id;
 
         let userMem = memory[userId] || {};

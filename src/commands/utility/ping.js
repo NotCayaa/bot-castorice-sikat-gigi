@@ -5,14 +5,8 @@ module.exports = {
     description: 'Cek latency bot',
     async execute(message, args, client) {
         const msg = await message.reply('Testing ping...');
-
-        // Ping 1: Message latency (user → bot → user)
         const messagePing = msg.createdTimestamp - message.createdTimestamp;
-
-        // Ping 2: Gateway ping bot ke Discord
         const botGatewayPing = client.ws.ping;
-
-        // Grafik bar
         const bar = (ms) => {
             if (ms === null || typeof ms !== 'number') return '──────────';
             const max = 300;

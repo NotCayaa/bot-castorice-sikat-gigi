@@ -13,7 +13,6 @@ module.exports = {
                 return replyEmbedAndSave(message, createStatusEmbed({ title: "Groq Error", description: "Unable to fetch limits" }));
             }
 
-            // Cek apakah limit header tersedia
             if (!limits.reqLimit) {
                 const daily = getDailyResetInfo();
                 const embed = createStatusEmbed({

@@ -341,6 +341,27 @@ module.exports = {
 
         if (wasEmpty) {
             playNext(guildId);
+        } else {
+            if (queue.songs.length === 2 && !queue.songs[1].isResolved) {
+                const nextSong = queue.songs[1];
+                console.log(`[Music] Proactive Prefetch: ${nextSong.title}`);
+                nextSong.isResolving = true;
+                musicService.searchTrack(nextSong.title).then(res => {
+                    if (res) {
+                        nextSong.url = res.url;
+                        nextSong.videoId = res.videoId;
+                        nextSong.title = res.title;
+                        nextSong.isResolved = true;
+
+                        if (nextSong.spotifyId) {
+                            musicCache.setLearnedMatch(nextSong.spotifyId, res.videoId);
+                        }
+                        musicService.getStreamUrl(res.videoId).catch(console.error);
+
+                        console.log(`[Music] Proactive Prefetch DONE: ${nextSong.title}`);
+                    }
+                }).catch(console.error);
+            }
         }
     },
 };
