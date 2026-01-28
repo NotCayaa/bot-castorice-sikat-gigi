@@ -17,10 +17,10 @@ const SOUNDBOARD_CLIPS = {
     },
 };
 
-const COMMAND_LIST = {
+const COMMAND_LIST = { // List Commands
     'help': 'Menampilkan semua command',
     'ping': 'Cek latency bot (bukan ping kamu ke Discord)',
-    'chat/c': 'Ngobrol ama Bot Ditos pake LLM Groq',
+    'chat/c': 'Ngobrol sama Bot Tia pake LLM Groq',
     'join': 'Bot join vois',
     'leave': 'Bot keluar dari vois',
     'halo': 'Bot menyapa balik',
@@ -31,21 +31,21 @@ const COMMAND_LIST = {
     'joke': 'Random dad jokes',
     'ui': 'Info lengkap tentang user',
     'si': 'Info tentang server',
-    'clear': 'Clear history chat dengan bot',
+    'clear': 'Clear history chat dengan bot.',
     'rem': 'Saved Memory kaya di ChatGPT',
     'rec': 'Ngecek Saved Memory',
-    'forg': 'Menghapus Saved Memory, bisa hapus all atau berdasarkan nomor (d!rec buat liat nomornya)',
+    'forg': 'Menghapus Saved Memory, bisa hapus all atau berdasarkan nomor (t!rec buat liat nomornya)',
     'stats': 'Cek status bot dan resource usage',
     'w': 'Cek cuaca di lokasi tertentu',
     'pilih': 'Bot bakal milih satu dari pilihan yang dikasih',
     'g/google': 'Google search, nanti bot kasih 3 hasil teratas dengan bantuan AI',
     'global': 'tambahin ini di belakang rem, rec, forg buat command memory global',
     'queue/q': 'Liat antrian lagu yang lagi disetel',
-    'remind/remi': 'Setel pengingat sederhana (contoh: d!remind 10m minum obat)',
+    'remind/remi': 'Setel pengingat sederhana (contoh: t!remind 10m minum obat)',
     'poll/vote': 'Buat poll sederhana di channel',
     'roll/dice': 'Roll a Dice',
     'trivia/quiz': 'Random trivia question (jawab lewat reply)',
-    'list, cancel': 'List atau batalin reminder yang lagi aktif, tambahin setelah d!remi',
+    'list, cancel': 'List atau batalin reminder yang lagi aktif, tambahin setelah t!remi',
     'groqstatus/gs': 'Cek apakah API masih bisa dipake',
     'quizscore/qscore': 'Cek skor minigame trivia',
     'quizleaderboard/qlb': 'Cek leaderboard',
@@ -53,7 +53,7 @@ const COMMAND_LIST = {
     'eli5': 'Explain Like I\'m 5',
     'ocr': 'Extract text from image',
     'gen': 'Generate image',
-    'testkeys/keystat': 'Cek status semua API Keys',
+    'autochat/ac': 'setting autochat bot',
 };
 
 const TOPICS = [

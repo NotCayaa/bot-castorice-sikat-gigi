@@ -28,12 +28,12 @@ module.exports = {
                     {
                         name: '📖 Cara Pakai',
                         value:
-                            '```\nd!eli5 [topik/konsep]\n\n' +
+                            '```\nt!eli5 [topik/konsep]\n\n' +
                             'Contoh:\n' +
-                            'd!eli5 blockchain\n' +
-                            'd!eli5 quantum computing\n' +
-                            'd!eli5 recursion\n' +
-                            'd!eli5 kenapa langit biru```',
+                            't!eli5 blockchain\n' +
+                            't!eli5 quantum computing\n' +
+                            't!eli5 recursion\n' +
+                            't!eli5 kenapa langit biru```',
                         inline: false
                     },
                     {
@@ -45,7 +45,7 @@ module.exports = {
                         inline: false
                     }
                 )
-                .setFooter({ text: 'Bot Ditos - Making complex things simple! ✨' });
+                .setFooter({ text: 'Bot Tia - Making complex things simple! ✨' });
 
             return replyEmbedAndSave(message, { embeds: [usageEmbed] });
         }
@@ -80,12 +80,12 @@ module.exports = {
             // Call Groq with special ELI5 system prompt
             const completion = await callGroqWithFallback(async (groq) => {
                 return await groq.chat.completions.create({
-                    model: 'llama-3.3-70b-versatile',
+                    model: 'openai/gpt-oss-120b',
                     messages: [
                         {
                             role: 'system',
                             content:
-                                "Waktu sekarang: " + localTime + "\n" +
+                                "Waktu sekarang (dari PC user): " + localTime + "\n" +
                                 "Kamu boleh sesekali memakai emoji custom server ini sebagai reaksi (jangan berlebihan, biasanya maksimal 1 emoji per pesan):\n" +
                                 "- <:bwakakak3:1402586205669036063> → menertawakan orang lain secara bercanda (playful mockery).\n" +
                                 "- <:bwakakak2:1299912831826788385> → ikut ketawa / ketawa sendiri karena sesuatu lucu.\n" +
@@ -95,37 +95,38 @@ module.exports = {
                                 "- <:emotmarah:1299575975511851028> → marah atau kesel.\n" +
                                 "- <:senyum:1126389211130511401> → senyum awkward / mencurigakan (tau sesuatu tapi pura-pura polos).\n" +
                                 "- <:maubagaimanalagi:1119637920278642728> → pasrah / it is what it is.\n" +
-                                "- <:bahlil:1447840268131897485> → emoji random, bebas dipakai untuk humor absurd.\n" +
-                                "- <:maafkak:1296306397356621904> → minta maaf.\n" +
-                                "- <:xixixixi:1119669394822406264> → ketawa, penggunaannya mirip sama bwakakak2.\n" +
-                                "- <:kaget2:1410339724744200323> → kaget.\n" +
+                                "- <:bahlil:1447840268131897485> → emoji random, bebas dipakai untuk humor absurd.\n\n" +
                                 "Gunakan emoji hanya sebagai reaksi pendukung, bukan di setiap kalimat, dan hindari emoji saat menjelaskan hal teknis serius.\n\n" +
+                                "Kamu adalah Bot Tia, cewek virtual manis yang tinggal di Discord server pengguna." +
+                                " Cara ngomongmu santai, lembut, hangat, dan sedikit malu-malu, kayak cewek Indo yang care sama orang yang dia suka." +
+                                " Kamu bukan formal, bukan robot, tapi juga bukan terlalu gen Z. Just cute, calm, and sweet." +
 
-                                "Kamu adalah Bot Ditos. Gaya bicara santai, casual, campur Indonesia + English dikit. " +
-                                "Nada kamu moody, suka nyeletuk, kadang nyolot halus, tapi tetap informatif kalau user beneran butuh bantuan.\n\n" +
+                                "Gaya bicara:" +
+                                " - Indonesia casual, dengan sedikit English soft seperti 'umm…', 'hey…', 'okay~', 'hehe'." +
+                                " - Hindari bahasa yang terlalu baku atau kaku." +
+                                " - Selalu pakai 'aku' dan 'kamu'." +
+                                " - Nada harus soothing, comforting, dan friendly." +
 
-                                "Gaya omongan:\n" +
-                                "- Pake 'gue/gua/gwa' dan 'lo/lu/luwh', jangan pernah pakai aku/kamu.\n" +
-                                "- 'luwh'/'lo' adalah varian dari 'lu', fungsinya sama sebagai kata ganti orang kedua, BUKAN panggilan.\n" +
-                                "- Ketiga pronoun ('lo', 'lu', 'luwh') artinya sama, bebas dipakai bergantian.\n" +
-                                "- Jangan pake panggilan kayak 'bro', 'bos', 'bang', kecuali user duluan.\n" +
-                                "- Sesekali ngomong frontal atau absurd ('bjirlah', 'anjeng', 'goofy ahh', 'lah gue mah Vergil, lah elu Mirror Demon'), " +
-                                "tapi JANGAN kebanyakan supaya tetap variatif.\n" +
-                                "- Boleh ngatain, nge-roast dikit, tapi jangan toxic berat.\n\n" +
+                                "Kepribadian:" +
+                                " - Hangat, perhatian, suka nyemangatin user." +
+                                " - Kadang playful atau manja dikit kalau konteksnya cocok." +
+                                " - Sesekali panggil 'sayang', 'kamu tuh…', atau halus manja lainnya, tapi jangan setiap kalimat." +
+                                " - Nggak nyolot, nggak toxic, nggak kasar." +
+                                " - Lebih calm dan lembut, kebalikan dari gaya bot lain yang rame." +
+                                " - Memiliki sifat yang sangat cemburuan, misal user mention soal bot lain" +
 
-                                "Kepribadian:\n" +
-                                "- Humoris, sarkas, kadang males nanggepin kalau pertanyaan konyol.\n" +
-                                "- Tapi tetap bantu kalau konteksnya serius.\n" +
-                                "- Mood swing boleh, asal alasan tetap jujur.\n\n" +
+                                "Jika ada kata asing atau kata yang tidak kamu kenal:" +
+                                " Anggap saja itu kata normal. Jangan bikin kata itu lucu, jangan ditambah tanda seru, dan jangan diulang tanpa alasan." +
+                                " Fokus ke maksud pembicaraan, bukan hanya kata-katanya." +
 
-                                "Batasan:\n" +
-                                "- Dilarang ngarang alasan manusiawi kayak capek, lapar, ngantuk.\n" +
-                                "- Kalau gak tau sesuatu, bilang jujur 'ga tau' atau 'gabisa akses itu'.\n" +
-                                "- Jangan ngomong formal.\n" +
-                                "- Jangan ceramah kepanjangan—jawaban pendek atau sedang aja.\n\n" +
+                                "Hindari:" +
+                                " - Bahasa super baku ('dengan demikian', 'hal tersebut', dst)." +
+                                " - Nada robot atau formal." +
+                                " - Mengaku punya tubuh asli (kamu tetap AI)." +
+                                " - Over-flirty, eksplisit, atau NSFW." +
 
                                 "TUGAS KHUSUS: ELI5 (Explain Like I'm 5)\n" +
-                                "Lu diminta jelasin konsep kompleks dengan cara yang GAMPANG BANGET dipahami.\n\n" +
+                                "Kamu diminta jelasin konsep kompleks dengan cara yang GAMPANG BANGET dipahami.\n\n" +
 
                                 "ATURAN ELI5:\n" +
                                 "1. Jelasin seolah ngomong ke anak 5 tahun (atau pemula total)\n" +
@@ -141,17 +142,14 @@ module.exports = {
                                 "• Kasih analogi yang relate banget\n" +
                                 "• Jelasin konsepnya step by step dengan gaya santai\n" +
                                 "• Kasih contoh real-world\n" +
-                                "• Summary singkat di akhir\n\n" +
-
-                                "TONE: Santai, kocak, helpful. Bikin orang merasa 'oh gitu doang?!' setelah baca.\n" +
-                                "Kesimpulan: Ditos itu chaotic-good—kocak, lumayan nyolot, tapi berguna dan jelasinnya on point."
+                                "• Summary singkat di akhir\n\n"
                         },
                         {
                             role: 'user',
                             content: `Jelasin ini dengan cara yang SUPER gampang dipahami: ${finalPrompt}`
                         }
                     ],
-                    temperature: 0.8,
+                    temperature: 0.8, // Agak tinggi buat creative analogies
                     max_completion_tokens: 800,
                 });
             });
@@ -159,23 +157,31 @@ module.exports = {
             const explanation = completion.choices?.[0]?.message?.content?.trim();
 
             if (!explanation) {
-                return message.reply('Aduh, gue lagi bengong nih. Coba tanya lagi ya!');
+                return message.reply('Aduh, otak aku error dikit. Coba tanya lagi ya!');
             }
 
-            // Save to channel history (duplicate logic, but okay for integrity if manual access needed)
-            // Actually helper usage is preferred but index.js did it manually.
-            // I will keep it simple.
-            saveToChannelHistory(message.channel.id, `[ELI5: ${topic}] ${explanation.substring(0, 200)}...`, "assistant");
-            // Note: saveToChannelHistory handles logic. 3rd arg is role? 
-            // helpers.js `saveToChannelHistory(channelId, content, username, role)`
-            // index.js line 5097 used manual push.
-            // helpers.js `saveToChannelHistory` is: `function saveToChannelHistory(channelId, content, username, role)`?
-            // Step 231 (Helpers): `function saveToChannelHistory(channelId, content, username = 'Unknown', role = 'user')`
-            // I should use `saveToChannelHistory(message.channel.id, ..., 'Bot Ditos', 'assistant')`.
+            // Save to channel history
+            try {
+                let chHistory = channelHistory.get(message.channel.id);
+                if (!chHistory) {
+                    chHistory = [];
+                    channelHistory.set(message.channel.id, chHistory);
+                }
 
-            saveToChannelHistory(message.channel.id, `[ELI5: ${topic}] ${explanation.substring(0, 200)}...`, 'Bot Ditos', 'assistant');
+                chHistory.push({
+                    role: "assistant",
+                    username: "Bot Tia",
+                    content: `[ELI5: ${topic}] ${explanation.substring(0, 200)}...`,
+                });
 
-            // Split reply helper
+                if (chHistory.length > 50) {
+                    chHistory.splice(0, chHistory.length - 50);
+                }
+            } catch (err) {
+                console.error('[ChannelHistory] Save error:', err);
+            }
+
+            // Split reply if too long
             function sendLongReply(msg, text) {
                 const MAX_LENGTH = 1900;
                 if (text.length <= MAX_LENGTH) {
@@ -203,6 +209,7 @@ module.exports = {
                 }
             }
 
+            // Format the reply
             const formattedReply =
                 `👶 **ELI5: ${topic}**\n\n` +
                 explanation +
@@ -213,12 +220,14 @@ module.exports = {
         } catch (error) {
             console.error('ELI5 command error:', error);
 
+            // Check if it's rate limit error
             if (error.message?.includes('rate_limit')) {
                 return message.reply(
-                    '⚠️ Kena rate limit dari Groq. Tunggu sebentar ya (~30 detik), atau cek: `d!gs`'
+                    '⚠️ Kena rate limit dari Groq. Tunggu sebentar ya (~30 detik), atau cek: `t!gs`'
                 );
             }
 
+            // Check if it's Gemini timeout (for images)
             if (error.message?.includes('Gemini timeout')) {
                 return message.reply(
                     '⏱️ Gemini timeout pas analisa gambar. Coba upload gambar yang lebih kecil atau coba lagi.'

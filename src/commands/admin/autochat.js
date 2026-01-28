@@ -20,9 +20,9 @@ module.exports = {
                 `Cooldown: ${AUTO_CHAT_CONFIG.replyCooldown / 1000 / 60} menit\n` +
                 `Idle Chat: ${idleStatus}\n\n` +
                 `Commands:\n` +
-                `\`d!autochat on\` - Enable auto-chat\n` +
-                `\`d!autochat off\` - Disable auto-chat\n` +
-                `\`d!autochat config\` - Show detailed config`
+                `\`t!autochat on\` - Enable auto-chat\n` +
+                `\`t!autochat off\` - Disable auto-chat\n` +
+                `\`t!autochat config\` - Show detailed config`
             );
         }
 
@@ -47,6 +47,6 @@ module.exports = {
             );
         }
 
-        return message.reply('Usage: `d!autochat [on|off|status|config]`');
+        return message.reply('Usage: `t!autochat [on|off|status|config]`');
     },
 };

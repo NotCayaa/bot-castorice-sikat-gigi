@@ -12,7 +12,7 @@ module.exports = {
         }
 
         return message.reply(
-            'Oke, jurus lupa ingatan.. done.'
+            'Aku lupain semua yang terjadi di channel ini, seakan gak terjadi apa-apa..'
         );
     },
 };

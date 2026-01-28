@@ -58,7 +58,7 @@ module.exports = {
         }
 
         if (!timeToken || !textParts.length) {
-            return message.reply('Cara pakai: `d!remind 10m Hentikan kerja` atau `d!remind in 2h ; meeting` atau `d!remind list` `d!remind cancel <id>`');
+            return message.reply('Cara pakai: `t!remind 10m Hentikan kerja` atau `t!remind in 2h ; meeting` atau `t!remind list` `t!remind cancel <id>`');
         }
 
         const ms = parseDuration(timeToken);
@@ -110,6 +110,6 @@ module.exports = {
             }
         }, ms);
 
-        return replyAndSave(message, `Oke, gue bakal ingetin luwh dalam ${timeToken} tentang: **${reminderText}**`);
+        return replyAndSave(message, `Oke, Tia bakal ingetin kamu dalam ${timeToken} tentang: **${reminderText}**`);
     },
 };

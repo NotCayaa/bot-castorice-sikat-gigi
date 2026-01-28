@@ -105,7 +105,8 @@ module.exports = {
 
         const prefix = getPrefix(message.guild.id);
         if (message.content.toLowerCase().startsWith(prefix)) {
-            const args = message.content.slice(prefix.length).trim().split(/ +/);
+            // Gunakan \s+ biar bisa handle newlines setelah command name (penting buat t!pilih)
+            const args = message.content.slice(prefix.length).trim().split(/\s+/);
             const commandName = args.shift().toLowerCase();
 
             const command = client.commands.get(commandName) || client.commands.get(client.aliases.get(commandName));
@@ -120,7 +121,7 @@ module.exports = {
                 return; // Exit after command
             } else {
                 // Jika command gak dikenali
-                return message.reply('Salah command luwh, coba `d!help` buat liat list command gwej');
+                return message.reply('Aku nggak ngerti command itu.. coba ketik `t!help` buat liat list command aku ya~');
             }
         }
 

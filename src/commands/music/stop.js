@@ -9,21 +9,18 @@ module.exports = {
         const queue = musicQueues.get(guildId);
 
         if (!queue) {
-            return message.reply('Stop apaan, gada yang disetel');
+            return message.reply('Aku lagi gak nyetel apa-apa, jadi gak bisa stop musik ya');
         }
 
-        // Clear songs
         queue.songs = [];
-        queue.nowPlaying = null; // [FIX] Clear now playing
-        queue.stopOnIdle = true; // [NEW FLAG]
         queue.player.stop();
+        queue.connection.destroy();
+        musicQueues.delete(guildId);
 
         const embed = generateMusicEmbed(guildId);
         if (embed) {
-            // Embed bakal update jadi "Tidak ada lagu", tapi gpp
-            // Atau kita apus embed last playing?
+            return message.channel.send({ embeds: [embed], components: [getMusicButtons(guildId)] });
         }
-
-        return message.reply('⏹ Musik distop, antrian dihapus. (Bot stay di voice)');
+        return message.reply('Oke, Tia pergi dulu~');
     },
 };

@@ -8,7 +8,7 @@ module.exports = {
         const contentWithoutPrefix = message.content.slice(prefix.length).trim();
         const afterCommand = contentWithoutPrefix.replace(/^[^\s]+\s*/, '').trim();
 
-        if (!afterCommand) return message.reply('Contoh pakai: d!poll 1m; Enaknya ngapain?; Tidur; Ngoding; Main game');
+        if (!afterCommand) return message.reply('Contoh pakai: t!poll 1m; Enaknya ngapain?; Tidur; Ngoding; Main game');
 
         const parts = afterCommand.split(';').map(p => p.trim()).filter(Boolean);
         if (parts.length === 0) return message.reply('Kasih pertanyaan dong.');

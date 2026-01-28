@@ -1,43 +1,46 @@
 const { joinVoiceChannel } = require('@discordjs/voice');
 const { playLocalSound } = require('../../utils/voiceManager');
 const { generateMusicEmbed, getMusicButtons } = require('../../utils/uiHelpers');
+const { musicQueues } = require('../../data/state');
 const { OWNER_ID } = require('../../config');
 
 module.exports = {
     name: 'join',
-    description: 'Suruh bot masuk voice channel',
+    aliases: ['j'],
+    description: 'Panggil Tia ke voice channel',
     async execute(message, args, client) {
-        const { voice } = message.member;
+        const voiceChannel = message.member?.voice.channel;
+        const guildId = message.guild.id;
 
-        if (!voice.channel) {
-            return message.reply('Minimal kalo mau command ini lu di vois dulu bos');
+        if (!voiceChannel) {
+            return message.reply('Join voice dulu ya buat manggil Tia~');
         }
 
         try {
-            joinVoiceChannel({
-                channelId: voice.channel.id,
-                guildId: voice.channel.guild.id,
-                adapterCreator: voice.channel.guild.voiceAdapterCreator,
+            const connection = joinVoiceChannel({
+                channelId: voiceChannel.id,
+                guildId: voiceChannel.guild.id,
+                adapterCreator: voiceChannel.guild.voiceAdapterCreator,
                 selfDeaf: false,
             });
 
-            console.log('Joined voice:', voice.channel.name);
+            console.log('Joined voice:', voiceChannel.name);
 
-            // Auto soundboard tengkorak
-            await playLocalSound(voice.channel, 'tengkorak', message.channel);
-
-            const embed = generateMusicEmbed(message.guild.id);
+            const embed = generateMusicEmbed(guildId);
             if (embed) {
-                return message.channel.send({
-                    embeds: [embed],
-                    components: [getMusicButtons(message.guild.id)]
-                });
+                // Check if queue exists, if so send embed
+                const queue = musicQueues.get(guildId);
+                if (queue) {
+                    return message.channel.send({ embeds: [embed], components: [getMusicButtons(guildId)] });
+                }
             }
 
-            return message.reply(`mana nih..? **${voice.channel.name}**`);
+            return message.reply(`Hai~ **${voiceChannel.name}**`);
         } catch (err) {
             console.error(err);
-            return message.reply(`Seseorang bilangin <@${OWNER_ID}> kalo bot nya error`);
+            return message.reply(
+                `Seseorang bilangin <@${OWNER_ID}> kalo Tia error`
+            );
         }
     },
 };

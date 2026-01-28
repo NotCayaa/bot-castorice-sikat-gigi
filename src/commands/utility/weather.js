@@ -12,7 +12,7 @@ module.exports = {
         // console.log("WEATHER KEY:", process.env.WEATHER_API_KEY); // Optional debug, preserved from original? Original had it.
 
         if (!location) {
-            return message.reply('Mau cek cuaca mana? Contoh: `d!weather jakarta`');
+            return message.reply('Mau cek cuaca mana? Contoh: `t!weather jakarta`');
         }
 
         const apiKey = process.env.WEATHER_API_KEY;

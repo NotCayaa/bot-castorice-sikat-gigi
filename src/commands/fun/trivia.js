@@ -64,7 +64,7 @@ module.exports = {
 
             const completion = await callGroqWithFallback(async (groq) => {
                 return await groq.chat.completions.create({
-                    model: 'llama-3.3-70b-versatile',
+                    model: 'openai/gpt-oss-120b',
                     messages: [
                         {
                             role: 'system',
@@ -98,7 +98,7 @@ module.exports = {
                         }
                     ],
                     temperature: 0.95,
-                    max_completion_tokens: 200,
+                    max_completion_tokens: 300,
                 });
             });
 

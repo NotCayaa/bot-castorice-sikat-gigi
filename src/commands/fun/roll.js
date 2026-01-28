@@ -6,7 +6,7 @@ module.exports = {
     aliases: ['dice'],
     async execute(message, args, client) {
         const token = args.join('').trim();
-        if (!token) return message.reply('Cara pakai: d!roll NdM+K (contoh 2d6+3) atau d!roll d20 atau d!roll 6');
+        if (!token) return message.reply('Cara pakai: t!roll NdM+K (contoh 2d6+3) atau t!roll d20 atau t!roll 6');
 
         // patterns: NdM +/-K or just M
         const diceMatch = token.match(/^(\d*)d(\d+)([+-]\d+)?$/i);

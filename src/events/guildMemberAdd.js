@@ -31,7 +31,7 @@ module.exports = {
             .setDescription(
                 `Halo ${member}!\n` +
                 `Selamat datang di **${member.guild.name}**.\n` +
-                `Coba \`d!help\` buat liat list command yang gwe punya.`
+                `Coba \`t!help\` buat liat list command yang Tia punya.`
             )
             .setColor(0x57f287) // hijau soft
             .setThumbnail(avatarURL)

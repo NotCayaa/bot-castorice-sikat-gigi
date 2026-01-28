@@ -1,6 +1,5 @@
 const { musicQueues } = require('../../data/state');
 const { playNext } = require('../../utils/voiceManager');
-const { generateMusicEmbed, getMusicButtons } = require('../../utils/uiHelpers');
 
 module.exports = {
     name: 'skip',
@@ -11,7 +10,7 @@ module.exports = {
         const queue = musicQueues.get(guildId);
 
         if (!queue || !queue.songs.length) {
-            return message.reply('Skip apaan, gada yang disetel');
+            return message.reply('Aku lagi gak nyetel apa-apa, jadi gak bisa skip ya');
         }
 
         queue.player.stop();

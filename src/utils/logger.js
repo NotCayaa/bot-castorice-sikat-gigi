@@ -41,7 +41,7 @@ const applyLogger = (rootDir) => {
 
         let color = "\x1b[36m"; // default cyan
         if (BOT_NAME === "Bot Tia") color = "\x1b[35m";   // ungu
-        if (BOT_NAME === "Bot Ditos") color = "\x1b[32m"; // hijau
+        if (BOT_NAME === "Bot Tia") color = "\x1b[35m";   // ungu
 
         writeLog(msg);
         _originalLog(color + msg + "\x1b[0m");

@@ -1,16 +1,14 @@
 {
     "ignore": [
-        "memory.json",
+        "memorytia.json",
         "trivia-score.json",
         "reminders.json",
         "settings.json",
         "Log/**/*",
-        "temp/**/*",
-        "src/data/songCache.json"
+        "temp/**/*"
     ],
     "watch": [
-        "src",
-        "index.js"
+        "src/index.js"
     ],
     "ext": "js"
 }

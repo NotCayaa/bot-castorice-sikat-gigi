@@ -16,10 +16,10 @@ module.exports = {
         if (!data) {
             if (isGlobal) {
                 return message.reply(
-                    'Belum ada global memory yang di save. Coba pake `d!rem global <teks>` dulu.'
+                    'Belum ada global memory yang di save. Coba pake `t!rem global <teks>` dulu.'
                 );
             }
-            return message.reply('Belum ada memory yang di save. Coba pake `d!remember/d!rem` dulu.');
+            return message.reply('Tia gak inget apa-apa tentang kamu.. Belum ada memory yang di save. Coba pake `t!remember/t!rem` dulu.');
         }
 
         let notes = [];
@@ -38,7 +38,7 @@ module.exports = {
             if (isGlobal) {
                 return message.reply('Belum ada global memory yang di save.');
             }
-            return message.reply('Belum ada memory yang di save.');
+            return message.reply('Tia gak inget apa-apa tentang kamu.. Belum ada memory yang di save.');
         }
 
         const lines = notes
@@ -50,11 +50,11 @@ module.exports = {
 
         if (isGlobal) {
             return message.reply(
-                `Global memory yang gwe inget (berlaku buat semua user):\n${lines}`
+                `Global memory yang Tia inget (berlaku buat semua user):\n${lines}`
             );
         }
 
         return message.reply(
-            `Yang gwe inget tentang lu (${message.author.tag}):\n${lines}`);
+            `Yang Tia inget tentang kamu (${message.author.tag}):\n${lines}`);
     },
 };

@@ -6,7 +6,7 @@ module.exports = {
     aliases: ['gs'],
     async execute(message, args, client) {
         try {
-            const model = "llama-3.3-70b-versatile";
+            const model = "openai/gpt-oss-120b";
             const { limits, json, status } = await fetchGroqLimits(model);
 
             if (!limits || !status) {

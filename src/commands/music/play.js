@@ -4,14 +4,12 @@ const {
     NoSubscriberBehavior,
     AudioPlayerStatus
 } = require('@discordjs/voice');
-const ytdlExec = require('yt-dlp-exec'); // [RESTORED] Needed for playlists
+const ytpl = require('ytpl');
 const ytSearch = require('yt-search');
 const { musicQueues } = require('../../data/state');
 const { playNext } = require('../../utils/voiceManager');
 const { spotifyApi } = require('../../utils/spotifyManager');
 const { generateMusicEmbed, getMusicButtons } = require('../../utils/uiHelpers');
-const musicService = require('../../utils/musicService');
-const musicCache = require('../../utils/musicCache');
 
 module.exports = {
     name: 'play',
@@ -22,35 +20,21 @@ module.exports = {
         const voiceChannel = message.member.voice.channel;
 
         if (!voiceChannel) {
-            return message.reply('Minimal kalo mau dengerin musik, lu di vois dulu bos');
+            return message.reply('Kalo mau dengerin musik, kamu join voice dulu ya');
         }
 
         const query = args.join(' ');
         if (!query) {
-            return message.reply('Kasih judul atau link bok- lagunya dong, contoh: `d!play blinding lights atau d!play https://www.youtube.com/watch?v=xxx`');
+            return message.reply('Kasih judul atau link lagunya dong, contoh: `t!play blinding lights` atau `t!play https://www.youtube.com/watch?v=xxx`');
         }
 
         let url;
         let title;
 
-        // --- YOUTUBE PLAYLIST (via yt-dlp) ---
-        // Detect playlist URL pattern simple
-        const isPlaylist = query.includes('list=') && (query.includes('youtube.com') || query.includes('youtu.be'));
-
-        if (isPlaylist) {
-            try {
-                await message.reply('Lagi ngambil data playlist, tunggu bentar...');
-
-                // Fetch metadata ONLY using yt-dlp (fast)
-                const output = await ytdlExec(query, {
-                    flatPlaylist: true,
-                    dumpSingleJson: true,
-                    noWarnings: true,
-                });
-
-                if (!output || !output.entries) {
-                    throw new Error('Playlist kosong atau gak kebaca.');
-                }
+        // --- YOUTUBE PLAYLIST ---
+        try {
+            if (await ytpl.validateID(query)) {
+                const playlist = await ytpl(query, { limit: 100 });
 
                 let queue = musicQueues.get(guildId);
                 let wasEmpty = !queue || !queue.songs || queue.songs.length === 0;
@@ -77,10 +61,19 @@ module.exports = {
                         connection,
                         player,
                         songs: [],
-                        volume: 1, // Default volume
                     };
 
                     musicQueues.set(guildId, queue);
+
+                    player.on(AudioPlayerStatus.Playing, () => {
+                        const embed = generateMusicEmbed(guildId);
+                        if (embed) {
+                            queue.textChannel.send({
+                                embeds: [embed],
+                                components: getMusicButtons(guildId)
+                            });
+                        }
+                    });
 
                     player.on(AudioPlayerStatus.Idle, () => {
                         queue.songs.shift();
@@ -96,28 +89,33 @@ module.exports = {
                     wasEmpty = true;
                 }
 
-                const newSongs = output.entries.map(item => ({
-                    title: item.title,
-                    url: item.url || `https://www.youtube.com/watch?v=${item.id}`,
-                    requestedBy: message.author.tag
-                }));
+                for (const item of playlist.items) {
+                    queue.songs.push({
+                        title: item.title,
+                        url: item.shortUrl || item.url,
+                        requestedBy: message.author.tag,
+                    });
+                }
 
-                queue.songs.push(...newSongs);
-
-                await message.channel.send(
-                    `✅ Berhasil nambahin playlist **${output.title || 'Unknown Playlist'}** (${newSongs.length} lagu) ke antrian.`
+                await message.reply(
+                    `Nambahin playlist **${playlist.title}** (${playlist.items.length} lagu) ke antrian`
                 );
 
                 if (wasEmpty) {
                     playNext(guildId);
                 }
                 return;
-
-            } catch (err) {
-                console.error('[Play] Playlist Fail:', err);
-                // Jangan return, lanjut coba anggap sebagai single video siapa tau linknya aneh
-                message.channel.send('Gagal baca sebagai playlist, nyoba mode single video...');
             }
+        } catch (err) {
+            console.error('Playlist error:', err);
+            // Fallback if needed, but original returned here.
+            // But we can just let it flow if validateID was false? 
+            // Original logic has 'return' inside the try block if successful.
+            // If error, it replies and returns.
+            await message.reply(
+                'Gagal baca playlist YouTube-nya.. coba link lain atau cek lagi URL-nya.'
+            );
+            return;
         }
 
         // --- SPOTIFY ---
@@ -137,35 +135,27 @@ module.exports = {
                 if (type === 'track') {
                     const trackData = await spotifyApi.getTrack(id);
                     const track = trackData.body;
-                    const spotifyId = track.id;
                     const searchQuery = `${track.name} ${track.artists.map(a => a.name).join(' ')}`;
+                    const res = await ytSearch(searchQuery);
+                    const video = res.videos && res.videos.length ? res.videos[0] : null;
 
-                    // [CACHE CHECK FIRST]
-                    const cachedVideoId = musicCache.getLearnedMatch(spotifyId);
-
-                    if (cachedVideoId) {
-                        console.log(`[Spotify→Cache Hit] ${spotifyId} -> ${cachedVideoId}`);
-                        url = `https://www.youtube.com/watch?v=${cachedVideoId}`;
-                        title = `${track.name} - ${track.artists[0].name}`;
-                    } else {
-                        const res = await musicService.searchTrack(searchQuery);
-
-                        if (!res) {
-                            return message.reply(`Gak nemu "${searchQuery}" di YouTube`);
-                        }
-
-                        url = res.url;
-                        title = `${track.name} - ${track.artists[0].name}`;
-
-                        // [SAVE TO CACHE]
-                        musicCache.setLearnedMatch(spotifyId, res.videoId);
-                        console.log(`[Spotify→YT] Track: ${searchQuery} → ${res.title} (Cached)`);
+                    if (!video) {
+                        return message.reply(`Gak nemu "${searchQuery}" di YouTube`);
                     }
+
+                    url = video.url;
+                    title = `${track.name} - ${track.artists[0].name}`;
+                    console.log(`[Spotify→YT] Track: ${searchQuery} → ${title}`);
                 }
                 // PLAYLIST
                 else if (type === 'playlist') {
                     const playlistData = await spotifyApi.getPlaylist(id);
                     const playlist = playlistData.body;
+
+                    await message.reply(
+                        `Converting Spotify playlist: **${playlist.name}** (${playlist.tracks.total} lagu)...\n` +
+                        `Ini bakal agak lama ya, sabar...`
+                    );
 
                     let queue = musicQueues.get(guildId);
                     let wasEmpty = !queue || !queue.songs || queue.songs.length === 0;
@@ -189,46 +179,40 @@ module.exports = {
                             connection,
                             player,
                             songs: [],
-                            volume: 1,
                         };
                         musicQueues.set(guildId, queue);
 
-                        // Basic event listeners handling
-                        player.on(AudioPlayerStatus.Idle, () => {
-                            queue.songs.shift();
-                            playNext(guildId);
-                        });
-                        player.on('error', (err) => {
-                            console.error('Player error:', err);
-                            queue.songs.shift();
-                            playNext(guildId);
-                        });
+                        player.on(AudioPlayerStatus.Idle, () => { queue.songs.shift(); playNext(guildId); });
+                        player.on('error', (err) => { console.error('Player error:', err); queue.songs.shift(); playNext(guildId); });
 
                         wasEmpty = true;
                     }
 
-                    // [LAZY LOAD] Convert to metadata first
-                    const tracks = playlist.tracks.items.slice(0, 100); // Limit 100 or higher
-                    const newSongs = [];
+                    const tracks = playlist.tracks.items.slice(0, 50).filter(item => item.track);
+                    const searchPromises = tracks.map(async (item) => {
+                        const track = item.track;
+                        const searchQuery = `${track.name} ${track.artists.map(a => a.name).join(' ')}`;
+                        try {
+                            const res = await ytSearch(searchQuery);
+                            const video = res.videos && res.videos.length ? res.videos[0] : null;
+                            if (video) {
+                                return {
+                                    title: `${track.name} - ${track.artists[0].name}`,
+                                    url: video.url,
+                                    requestedBy: message.author.tag,
+                                };
+                            }
+                        } catch (err) { console.error(`[Spotify] Skip: ${searchQuery}`); }
+                        return null;
+                    });
 
-                    for (const item of tracks) {
-                        if (item.track) {
-                            const track = item.track;
-                            const simpleTitle = `${track.name} - ${track.artists[0].name}`;
-                            newSongs.push({
-                                title: simpleTitle,
-                                url: null, // Unresolved
-                                isResolved: false,
-                                spotifyId: track.id, // [SPOTIFY CACHE KEY]
-                                requestedBy: message.author.tag,
-                            });
-                        }
-                    }
+                    const results = await Promise.all(searchPromises);
+                    const validSongs = results.filter(song => song !== null);
+                    queue.songs.push(...validSongs);
 
-                    queue.songs.push(...newSongs);
-
+                    const successCount = validSongs.length;
                     await message.reply(
-                        `✅ Berhasil nambahin playlist **${playlist.name}** (${newSongs.length} lagu) ke antrian (Mode Cepat).`
+                        `✅ Berhasil convert **${successCount}/${tracks.length}** lagu dari playlist **${playlist.name}**`
                     );
 
                     if (wasEmpty && queue.songs.length > 0) {
@@ -238,81 +222,29 @@ module.exports = {
                 }
                 // ALBUM
                 else if (type === 'album') {
-                    const albumData = await spotifyApi.getAlbum(id);
-                    const album = albumData.body;
-
-                    let queue = musicQueues.get(guildId);
-                    let wasEmpty = !queue || !queue.songs || queue.songs.length === 0;
-
-                    if (!queue) {
-                        const connection = joinVoiceChannel({
-                            channelId: voiceChannel.id,
-                            guildId: voiceChannel.guild.id,
-                            adapterCreator: voiceChannel.guild.voiceAdapterCreator,
-                            selfDeaf: false,
-                        });
-                        const player = createAudioPlayer({
-                            behaviors: { noSubscriber: NoSubscriberBehavior.Play },
-                        });
-                        connection.subscribe(player);
-                        queue = {
-                            voiceChannel,
-                            textChannel: message.channel,
-                            connection,
-                            player,
-                            songs: [],
-                            volume: 1,
-                        };
-                        musicQueues.set(guildId, queue);
-
-                        player.on(AudioPlayerStatus.Idle, () => {
-                            queue.songs.shift();
-                            playNext(guildId);
-                        });
-                        player.on('error', (err) => {
-                            console.error('Player error:', err);
-                            queue.songs.shift();
-                            playNext(guildId);
-                        });
-                        wasEmpty = true;
-                    }
-
-                    // [LAZY LOAD] Album tracks
-                    const tracks = album.tracks.items;
-                    const newSongs = [];
-
-                    for (const track of tracks) {
-                        const simpleTitle = `${track.name} - ${track.artists[0].name}`;
-                        newSongs.push({
-                            title: simpleTitle,
-                            url: null,
-                            isResolved: false,
-                            spotifyId: track.id, // [SPOTIFY CACHE KEY]
-                            requestedBy: message.author.tag,
-                        });
-                    }
-
-                    queue.songs.push(...newSongs);
-                    await message.reply(
-                        `✅ Berhasil nambahin album **${album.name}** (${newSongs.length} lagu) ke antrian.`
-                    );
-
-                    if (wasEmpty && queue.songs.length > 0) {
-                        playNext(guildId);
-                    }
-                    return;
+                    // Logic album skipped per original code instruction
+                    return message.reply('Album support masih WIP, coba playlist dulu ya');
                 }
 
             } catch (err) {
                 console.error('Spotify error:', err);
-                if (err.statusCode === 401) return message.reply('Spotify API token expired.');
-                if (err.statusCode === 404) return message.reply('Spotify playlist not found (mungkin private?).');
+                if (err.statusCode === 401) {
+                    return message.reply('Spotify API token expired, coba lagi bentar lagi');
+                }
+                if (err.statusCode === 404) {
+                    return message.reply(
+                        'Spotify balas 404 (Resource not found). Biasanya ini terjadi kalo playlist-nya ' +
+                        'tipe khusus / dibuat Spotify / personal (Made For You) yang gak bisa diambil lewat API. ' +
+                        'Coba pake playlist lain atau link track biasa.'
+                    );
+                }
                 return message.reply('Error pas convert dari Spotify: ' + (err.message || err));
             }
         }
 
         // --- YOUTUBE DIRECT / SEARCH ---
         try {
+            // NEW: Only search if URL isn't already set (e.g. from Spotify)
             if (!url) {
                 const isYTUrl = query.includes('youtube.com/watch') || query.includes('youtu.be/');
 
@@ -337,13 +269,13 @@ module.exports = {
                     }
                 } else {
                     // Search
-                    // Use MusicService for consistent scoring
-                    const res = await musicService.searchTrack(query);
-                    if (!res) {
-                        return message.reply(`Gak nemu lagu yang cocok`);
+                    const res = await ytSearch(query);
+                    const video = res.videos && res.videos.length ? res.videos[0] : null;
+                    if (!video) {
+                        return message.reply('Gak nemu lagu yang cocok');
                     }
-                    url = res.url;
-                    title = res.title;
+                    url = video.url;
+                    title = video.title;
                 }
             }
         } catch (err) {
@@ -377,12 +309,19 @@ module.exports = {
                 connection,
                 player,
                 songs: [],
-                volume: 1
             };
 
             musicQueues.set(guildId, queue);
 
-            // Reminder: Embed sent in voiceManager on play
+            player.on(AudioPlayerStatus.Playing, () => {
+                const embed = generateMusicEmbed(guildId);
+                if (embed) {
+                    queue.textChannel.send({
+                        embeds: [embed],
+                        components: getMusicButtons(guildId)
+                    }).catch(console.error);
+                }
+            });
 
             player.on(AudioPlayerStatus.Idle, () => {
                 queue.songs.shift();
@@ -402,42 +341,6 @@ module.exports = {
 
         if (wasEmpty) {
             playNext(guildId);
-        } else {
-            // [PROACTIVE PREFETCH]
-            // If we just added a song at index 1 (meaning it's Next), and we are playing index 0,
-            // we should prefetch it now instead of waiting for current song to end.
-            if (queue.songs.length === 2 && !queue.songs[1].isResolved) {
-                const nextSong = queue.songs[1];
-                console.log(`[Music] Proactive Prefetch: ${nextSong.title}`);
-                nextSong.isResolving = true;
-
-                // We don't await this, let it run in background.
-                // We use the resolveSong from voiceManager but it's not exported.
-                // Actually, play.js doesn't have access to resolveSong directly from voiceManager unless we export it?
-                // `playNext` is exported. `resolveSong` is NOT.
-                // We should export resolveSong or just let playNext handle it?
-                // No, playNext only handling it when song finishes is the problem.
-                // Let's import musicService and resolve it directly here, updating the object reference.
-
-                musicService.searchTrack(nextSong.title).then(res => {
-                    if (res) {
-                        nextSong.url = res.url;
-                        nextSong.videoId = res.videoId;
-                        nextSong.title = res.title;
-                        nextSong.isResolved = true;
-
-                        // Update cache
-                        if (nextSong.spotifyId) {
-                            musicCache.setLearnedMatch(nextSong.spotifyId, res.videoId);
-                        }
-
-                        // Also warm up stream cache?
-                        musicService.getStreamUrl(res.videoId).catch(console.error);
-
-                        console.log(`[Music] Proactive Prefetch DONE: ${nextSong.title}`);
-                    }
-                }).catch(console.error);
-            }
         }
     },
 };

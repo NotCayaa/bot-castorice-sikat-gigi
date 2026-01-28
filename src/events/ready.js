@@ -61,9 +61,9 @@ module.exports = {
             // So I must call setMemoryData here.
             const { setMemoryData, setTriviaScore } = require('../data/state'); // Require setter specifically
             setMemoryData(mem);
-            console.log("[Bot Ditos] Memory loaded:", Object.keys(mem).length, "items");
+            console.log("[Bot Tia] Memory loaded:", Object.keys(mem).length, "items");
         } catch (err) {
-            console.error("[Bot Ditos] Failed to load memory:", err);
+            console.error("[Bot Tia] Failed to load memory:", err);
         }
 
         // Load Trivia
@@ -72,16 +72,16 @@ module.exports = {
             const score = await loadTriviaScore();
             const { setTriviaScore } = require('../data/state');
             setTriviaScore(score);
-            console.log("[Bot Ditos] Trivia score loaded");
+            console.log("[Bot Tia] Trivia score loaded");
         } catch (err) {
-            console.error("[Bot Ditos] Failed to load trivia score:", err);
+            console.error("[Bot Tia] Failed to load trivia score:", err);
         }
 
         await restartAllReminders(client);
 
         const botStatus = [
-            'd!help',
-            'akulah mister D',
+            't!help',
+            'with you~',
             `with ${client.users.cache.size} members in ${client.guilds.cache.size} servers!`,
         ];
 

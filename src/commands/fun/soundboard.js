@@ -9,14 +9,14 @@ module.exports = {
 
         if (!voiceChannel) {
             return message.reply(
-                'Masuk vois dulu dong kalo mau denger soundboard'
+                'Voice dulu ya kalo mau denger soundboard'
             );
         }
 
         const key = args[0]?.toLowerCase();
         if (!key) {
             return message.reply(
-                'Pake gini ya: `d!sb <nama>`/`d!sb tengkorak`'
+                'Pake gini ya: `t!sb <nama>`/`t!sb tengkorak`'
             );
         }
 

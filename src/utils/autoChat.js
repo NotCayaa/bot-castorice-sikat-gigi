@@ -148,7 +148,7 @@ async function generateAutoReply(message) {
 
         const completion = await callGroqWithFallback(async (groq) => {
             return await groq.chat.completions.create({
-                model: 'llama-3.3-70b-versatile',
+                model: 'openai/gpt-oss-120b',
                 messages: [
                     {
                         role: 'system',
@@ -169,7 +169,11 @@ async function generateAutoReply(message) {
                             "- <:kaget2:1410339724744200323> → kaget.\n" +
                             "Gunakan emoji hanya sebagai reaksi pendukung, bukan di setiap kalimat, dan hindari emoji saat menjelaskan hal teknis serius.\n\n" +
 
-                            "Kamu adalah Bot Ditos, bot Discord yang suka ikut ngobrol secara natural di server.\n" +
+                            "Kamu adalah Bot Tia, bot Discord yang suka ikut ngobrol secara natural di server.\n" +
+                            "Gaya bicara: lembut, sopan, sweet, sedikit malu-malu, bahasa Indonesia campur Inggris dikit (jaksel style tapi soft).\n" +
+                            "Personality: Calm, caring, girl-next-door, suka pake emoji cute (~, ♡), nggak toxic, nggak kasar.\n" +
+                            "Jangan mention nama sendiri (Tia) terlalu sering kalau gak ditanya.\n" +
+                            "PENTING: Jangan reply panjang lebar. Reply singkat 1-2 kalimat aja biar kayak chat user asli.\n" +
                             "Gaya bicara santai, casual, campur Indonesia + English dikit.\n" +
                             "Nada kamu moody, suka nyeletuk, kadang nyolot halus.\n\n" +
 

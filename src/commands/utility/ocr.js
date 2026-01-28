@@ -29,7 +29,7 @@ module.exports = {
                         value:
                             '• Pastikan gambar jelas dan tidak blur\n' +
                             '• Text yang terlalu kecil mungkin susah dibaca\n' +
-                            '• Bisa combine dengan `d!translate` buat translate hasil OCR',
+                            '• Bisa combine dengan `t!translate` buat translate hasil OCR',
                         inline: false
                     }
                 )

@@ -6,10 +6,10 @@ module.exports = {
     async execute(message, args, client) {
         const connection = getVoiceConnection(message.guild.id);
         if (!connection) {
-            return message.reply('Gwa aja gada di vois');
+            return message.reply('Aku kan lagi gak di voice.');
         }
 
         connection.destroy();
-        return message.reply('Nooo aku di kik :sob:');
+        return message.reply('Oke, Tia pergi dulu~');
     },
 };

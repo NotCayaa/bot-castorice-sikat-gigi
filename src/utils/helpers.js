@@ -186,9 +186,9 @@ async function fetchGroqLimits(model) { // Cek limit API
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            model: model ?? "llama-3.3-70b-versatile",
+            model: model ?? "openai/gpt-oss-120b",
             messages: [{ role: "user", content: "hi" }],
-            max_tokens: 5
+            max_tokens: 300
         })
     });
 
@@ -272,7 +272,7 @@ async function saveTriviaScore(data) {
     await fsp.writeFile(TRIVIA_FILE_PATH, JSON.stringify(data, null, 2), 'utf8');
 }
 // CHANNEL HISTORY helpers
-function saveToChannelHistory(channelId, content, username = "Bot Ditos", role = "assistant") {
+function saveToChannelHistory(channelId, content, username = "Bot Tia", role = "assistant") {
     try {
         let chHistory = channelHistory.get(channelId);
         if (!chHistory) {
@@ -310,12 +310,12 @@ async function replyAndSave(message, payload) {
         sent = await message.reply(payload);
     }
 
-    saveToChannelHistory(message.channel.id, payload, "Bot Ditos", "assistant");
+    saveToChannelHistory(message.channel.id, payload, "Bot Tia", "assistant");
 
     return sent;
 }
 
-async function replyEmbedAndSave(message, payload, username = "Bot Ditos") {
+async function replyEmbedAndSave(message, payload, username = "Bot Tia") {
     try {
         const sent = await message.channel.send(payload);
 

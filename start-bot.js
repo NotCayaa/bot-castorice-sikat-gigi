@@ -8,7 +8,7 @@ function start() {
   });
 
   child.on("close", (code) => {
-    console.log(`Ditos exited with code ${code}. Restarting in 2 seconds...`);
+    console.log(`Tia exited with code ${code}. Restarting in 2 seconds...`);
     setTimeout(start, 2000);
   });
 }

@@ -20,8 +20,8 @@ async function saveSettings() {
 }
 
 function getPrefix(guildId) {
-    if (!guildId) return 'd!';
-    return settings[guildId]?.prefix || 'd!';
+    if (!guildId) return 't!';
+    return settings[guildId]?.prefix || 't!';
 }
 
 function setPrefix(guildId, prefix) {

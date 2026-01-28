@@ -10,7 +10,7 @@ module.exports = {
     aliases: ['generate'],
     async execute(message, args, client) {
         // Maintenance check from original code
-        return message.reply('⚠️ Command d!gen lagi maintenance (sengaja dimatiin sama <@' + OWNER_ID + '> <:xixixixi:1119669394822406264>)');
+        return message.reply('⚠️ Command lagi maintenance (sengaja dimatiin sama <@' + OWNER_ID + '> <:xixixixi:1119669394822406264>)');
 
         // Unreachable code below is preserved for integrity (as per original file)
 
@@ -19,7 +19,7 @@ module.exports = {
         const usageEmbed = new EmbedBuilder()
             .setTitle('🧠 AI Image Generator')
             .setDescription('Generate gambar anime-style pakai AI (Civitai).')
-            .addFields({ name: 'Cara Pakai', value: '`d!gen <prompt>`\nContoh: `d!gen 1girl, white hair, blue eyes, masterpiece`' })
+            .addFields({ name: 'Cara Pakai', value: '`t!gen <prompt>`\nContoh: `t!gen 1girl, white hair, blue eyes, masterpiece`' })
             .setColor('#00D9FF');
 
         if (!prompt) {

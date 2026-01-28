@@ -6,7 +6,7 @@ module.exports = {
     name: 'help',
     description: 'Menampilkan semua command',
     async execute(message, args, client) {
-        const prefix = "d!";
+        const prefix = "t!";
 
         const parsed = Object.entries(COMMAND_LIST).map(([raw, desc]) => {
             const aliases = raw
@@ -16,7 +16,7 @@ module.exports = {
         });
 
         const header =
-            `**Ditos Help Menu**\n` +
+            `**Tia Help Menu**\n` +
             `Version   : 2.0\n` +
             `Prefix    : ${prefix}\n` +
             `Developer : Caya8205 & AI\n\n`;

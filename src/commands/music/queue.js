@@ -9,7 +9,7 @@ module.exports = {
         const queue = musicQueues.get(guildId);
 
         if (!queue || queue.songs.length === 0) {
-            return message.reply('Antrian kosong melompong.');
+            return message.reply('Antrian kosong nih~');
         }
 
         const current = queue.songs[0];
