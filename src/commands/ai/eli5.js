@@ -161,18 +161,6 @@ module.exports = {
             if (!explanation) {
                 return message.reply('Aduh, gue lagi bengong nih. Coba tanya lagi ya!');
             }
-
-            // Save to channel history (duplicate logic, but okay for integrity if manual access needed)
-            // Actually helper usage is preferred but index.js did it manually.
-            // I will keep it simple.
-            saveToChannelHistory(message.channel.id, `[ELI5: ${topic}] ${explanation.substring(0, 200)}...`, "assistant");
-            // Note: saveToChannelHistory handles logic. 3rd arg is role? 
-            // helpers.js `saveToChannelHistory(channelId, content, username, role)`
-            // index.js line 5097 used manual push.
-            // helpers.js `saveToChannelHistory` is: `function saveToChannelHistory(channelId, content, username, role)`?
-            // Step 231 (Helpers): `function saveToChannelHistory(channelId, content, username = 'Unknown', role = 'user')`
-            // I should use `saveToChannelHistory(message.channel.id, ..., 'Bot Ditos', 'assistant')`.
-
             saveToChannelHistory(message.channel.id, `[ELI5: ${topic}] ${explanation.substring(0, 200)}...`, 'Bot Ditos', 'assistant');
 
             // Split reply helper

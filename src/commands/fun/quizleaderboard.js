@@ -6,8 +6,6 @@ module.exports = {
     aliases: ['qlb'],
     description: 'Cek leaderboard trivia',
     async execute(message, args, client) {
-        // Need to ensure globalTriviaScore is populated.
-        // It is loaded in ready.js.
         const entries = Object.values(state.triviaScore);
 
         if (entries.length === 0) {

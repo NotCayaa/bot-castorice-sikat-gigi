@@ -1,7 +1,7 @@
 const { loadReminders, saveReminders, parseDuration } = require('../../utils/reminderManager');
 const { replyAndSave } = require('../../utils/helpers');
 
-const MAX_DELAY = 2147483647; // 32-bit signed integer max
+const MAX_DELAY = 2147483647;
 
 module.exports = {
     name: 'remind',
@@ -11,7 +11,6 @@ module.exports = {
         const userId = message.author.id;
         const action = args[0]?.toLowerCase();
 
-        // List reminders
         if (action === 'list' || action === 'ls') {
             const data = await loadReminders();
             const list = (data[userId] || []);
@@ -20,7 +19,6 @@ module.exports = {
             return message.reply(`Reminders List:\n${lines}\n\nId:\n${list.map(r => `• ${r.id} → ${r.text}`).join('\n')}`);
         }
 
-        // Cancel reminder
         if (action === 'cancel' || action === 'del' || action === 'rm') {
             const id = args[1];
             if (!id) return message.reply('Cara pakai: d!remind cancel <id>');
@@ -34,7 +32,6 @@ module.exports = {
             return message.reply(`Reminder dibatalkan: ${removed.text}`);
         }
 
-        // Create new reminder
         let timeToken = args[0];
         let textParts = args.slice(1);
 
@@ -43,17 +40,13 @@ module.exports = {
             textParts = args.slice(2);
         }
 
-        // RAW MESSAGE PARSING for semicolon case
         const contentWithoutPrefix = message.content.slice(prefix.length).trim();
-        // Remove command name/alias
         const joined = contentWithoutPrefix.replace(/^[^\s]+\s*/, '').trim();
-
-        // Check semicolon separator
         if (joined.includes(';')) {
             const parts = joined.split(';').map(p => p.trim());
             if (parts.length >= 2) {
-                timeToken = parts[0].split(/\s+/)[0]; // First word of first part
-                textParts = [parts.slice(1).join('; ')]; // All subsequent parts are message
+                timeToken = parts[0].split(/\s+/)[0];
+                textParts = [parts.slice(1).join('; ')];
             }
         }
 
@@ -86,7 +79,6 @@ module.exports = {
         data[userId].push(entry);
         await saveReminders(data);
 
-        // Schedule immediate timeout
         setTimeout(async () => {
             try {
                 const ch = await client.channels.fetch(entry.channelId).catch(() => null);

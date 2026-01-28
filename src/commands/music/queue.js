@@ -14,7 +14,7 @@ module.exports = {
 
         const current = queue.songs[0];
         const list = queue.songs
-            .slice(1, 11) // Tampilkan 10 lagu berikutnya
+            .slice(1, 11)
             .map((song, i) => `${i + 1}. **${song.title}** (req by ${song.requestedBy})`)
             .join('\n');
 

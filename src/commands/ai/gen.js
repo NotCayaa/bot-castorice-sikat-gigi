@@ -9,10 +9,7 @@ module.exports = {
     description: 'Generate image using Civitai (Stable Diffusion)',
     aliases: ['generate'],
     async execute(message, args, client) {
-        // Maintenance check from original code
         return message.reply('⚠️ Command d!gen lagi maintenance (sengaja dimatiin sama <@' + OWNER_ID + '> <:xixixixi:1119669394822406264>)');
-
-        // Unreachable code below is preserved for integrity (as per original file)
 
         const prompt = args.join(" ").trim();
 

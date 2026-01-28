@@ -403,22 +403,10 @@ module.exports = {
         if (wasEmpty) {
             playNext(guildId);
         } else {
-            // [PROACTIVE PREFETCH]
-            // If we just added a song at index 1 (meaning it's Next), and we are playing index 0,
-            // we should prefetch it now instead of waiting for current song to end.
             if (queue.songs.length === 2 && !queue.songs[1].isResolved) {
                 const nextSong = queue.songs[1];
                 console.log(`[Music] Proactive Prefetch: ${nextSong.title}`);
                 nextSong.isResolving = true;
-
-                // We don't await this, let it run in background.
-                // We use the resolveSong from voiceManager but it's not exported.
-                // Actually, play.js doesn't have access to resolveSong directly from voiceManager unless we export it?
-                // `playNext` is exported. `resolveSong` is NOT.
-                // We should export resolveSong or just let playNext handle it?
-                // No, playNext only handling it when song finishes is the problem.
-                // Let's import musicService and resolve it directly here, updating the object reference.
-
                 musicService.searchTrack(nextSong.title).then(res => {
                     if (res) {
                         nextSong.url = res.url;
@@ -426,12 +414,9 @@ module.exports = {
                         nextSong.title = res.title;
                         nextSong.isResolved = true;
 
-                        // Update cache
                         if (nextSong.spotifyId) {
                             musicCache.setLearnedMatch(nextSong.spotifyId, res.videoId);
                         }
-
-                        // Also warm up stream cache?
                         musicService.getStreamUrl(res.videoId).catch(console.error);
 
                         console.log(`[Music] Proactive Prefetch DONE: ${nextSong.title}`);
